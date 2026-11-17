@@ -1,26 +1,37 @@
-// Vitest test setup
-// Extend Vitest's expect matchers or set up globals if needed
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
-// ResizeObserver polyfill for jsdom (needed by Recharts)
-if (typeof global.ResizeObserver === 'undefined') {
-  global.ResizeObserver = class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+// Mock the DuckDBManager and its dependencies
+export const mockDuckDBManager = {
+  initialize: vi.fn().mockResolvedValue(true),
+  isInitialized: vi.fn().mockReturnValue(true),
+  connect: vi.fn().mockResolvedValue({
+    query: vi.fn().mockResolvedValue({
+      toArray: vi.fn().mockResolvedValue([
+        { toJSON: () => ({ category: 'A', value: 100 }) },
+        { toJSON: () => ({ category: 'B', value: 200 }) },
+      ]),
+    }),
+    registerFileHandle: vi.fn().mockResolvedValue(undefined),
+    registerFile: vi.fn().mockResolvedValue(undefined),
+    terminate: vi.fn().mockResolvedValue(undefined),
+    }),
   };
-}
 
-// URL.createObjectURL polyfill for jsdom
-if (typeof global.URL.createObjectURL === 'undefined') {
-  global.URL.createObjectURL = () => 'blob:mock-url';
-  global.URL.revokeObjectURL = () => {};
-}
+export const mockLLMResponse = {
+  sql: 'SELECT category, SUM(value) as total FROM uploaded_data GROUP BY category',
+  widgetType: 'bar',
+  chartConfig: {
+    xAxisKey: 'category',
+    yAxisKeys: ['total'],
+    title: 'Total by Category',
+    description: 'Total value by category',
+  },
+};
 
-// HTMLCanvasElement.getContext polyfill
-if (typeof HTMLCanvasElement.prototype.getContext === 'undefined') {
-  HTMLCanvasElement.prototype.getContext = () => ({
-    drawImage: () => {},
-    toBlob: (cb: Function) => cb(new Blob(['mock'])),
-  } as any);
-}
+export const mockLLMClient = {
+  generateSQLAndConfig: vi.fn(),
+};
+
+export const mockSelfHealingController = {
+  executeWithRetry: vi.fn(),
+};
