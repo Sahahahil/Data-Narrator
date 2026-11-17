@@ -1,7 +1,8 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { inspectTable } from '../../src/data/schemaInspector';
+import { SchemaInspector } from '../../src/data/schemaInspector';
 
-describe('inspectTable', () => {
+describe('SchemaInspector', () => {
+  let inspector: SchemaInspector;
   let mockDuckDBManager: any;
   let mockConnection: any;
   let connectMock: any;
@@ -16,6 +17,7 @@ describe('inspectTable', () => {
     mockDuckDBManager = {
       connect: connectMock
     };
+    inspector = new SchemaInspector(mockDuckDBManager);
   });
 
   describe('inspectTable()', () => {
@@ -44,7 +46,7 @@ describe('inspectTable', () => {
         return Promise.resolve(sampleResult);
       });
 
-      const schema = await inspectTable(mockDuckDBManager, 'test_table');
+      const schema = await inspector.inspectTable('test_table');
 
       expect(schema.columns).toEqual([
         { name: 'id', type: 'INTEGER' },
@@ -61,6 +63,33 @@ describe('inspectTable', () => {
       const sampleResult = {
         toArray: vi.fn().mockResolvedValue([])
       };
+      connectMock.mockResolvedValue({ query: queryMock });
+      queryMock.mockImplementation((query: string) => {
+        if (query.includes('DESCRIBE')) {
+          return Promise.resolve(describeResult);
+        }
+        return Promise.resolve(sampleResult);
+      });
+
+      const schema = await inspector.inspectTable('empty_table');
+
+      expect(schema.columns).toEqual([]);
+      expect(schema.sampleData).toEqual([]);
+    });
+
+    it('should include column stats', async () => {
+      const describeResult = {
+        toArray: vi.fn().mockResolvedValue([
+          { column_name: 'id', column_type: 'INTEGER' },
+          { column_name: 'category', column_type: 'VARCHAR' }
+        ])
+      };
+      const sampleResult = {
+        toArray: vi.fn().mockResolvedValue([
+          { toJSON: () => ({ id: 1, category: 'A' }) },
+          { toJSON: () => ({ id: 2, category: 'B' }) }
+        ])
+      };
       connectMock.mockResolvedValue(mockConnection);
       queryMock.mockImplementation((query: string) => {
         if (query.includes('DESCRIBE')) {
@@ -69,10 +98,11 @@ describe('inspectTable', () => {
         return Promise.resolve(sampleResult);
       });
 
-      const schema = await inspectTable(mockDuckDBManager, 'empty_table');
+      const schema = await inspector.inspectTable('stats_table');
 
-      expect(schema.columns).toEqual([]);
-      expect(schema.sampleData).toEqual([]);
+      expect(schema.columnStats).toBeDefined();
+      expect(schema.columnStats!.id).toBeDefined();
+      expect(schema.columnStats!.id.distinct).toBeGreaterThan(0);
     });
   });
 });
