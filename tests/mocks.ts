@@ -12,9 +12,10 @@ export const mockDuckDBManager = {
       ]),
     }),
     registerFileHandle: vi.fn().mockResolvedValue(undefined),
-    registerFile: vi.fn().mockResolvedValue(undefined),
-    terminate: vi.fn().mockResolvedValue(undefined),
-  };
+  }),
+  registerFile: vi.fn().mockResolvedValue(undefined),
+  terminate: vi.fn().mockResolvedValue(undefined),
+};
 
 export const mockLLMResponse = {
   sql: 'SELECT category, SUM(value) as total FROM uploaded_data GROUP BY category',

@@ -1,90 +1,49 @@
 import { vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../src/App';
+import { mockDuckDBManager, mockLLMResponse, mockLLMClient, mockSelfHealingController } from './mocks';
 
 // Mock the DuckDBManager and its dependencies
-const mockDuckDBManager = {
-  initialize: vi.fn().mockResolvedValue(true),
-  isInitialized: vi.fn().mockReturnValue(true),
-  connect: vi.fn().mockResolvedValue({
-    query: vi.fn().mockResolvedValue({
-      toArray: vi.fn().mockResolvedValue([
-        { toJSON: () => ({ category: 'A', value: 100 }) },
-        { toJSON: () => ({ category: 'B', value: 200 }) },
-      ]),
-    }),
-    registerFileHandle: vi.fn().mockResolvedValue(undefined),
+vi.mock('../src/data/duckdbManager', () => ({
+  DuckDBManager: vi.fn().mockImplementation(() => mockDuckDBManager),
+}));
+
+vi.mock('../src/data/fileRegistry', () => ({
+  FileRegistry: vi.fn().mockImplementation(() => ({
     registerFile: vi.fn().mockResolvedValue(undefined),
-    terminate: vi.fn().mockResolvedValue(undefined),
-  };
+  })),
+}));
 
-vi.mock('../src/data/duckdbManager', () => {
-  return {
-    DuckDBManager: vi.fn().mockImplementation(() => mockDuckDBManager),
-  };
-});
+vi.mock('../src/data/schemaInspector', () => ({
+  SchemaInspector: vi.fn().mockImplementation(() => ({
+    inspectTable: vi.fn().mockResolvedValue({
+      columns: [
+        { name: 'category', type: 'VARCHAR' },
+        { name: 'value', type: 'DOUBLE' },
+      ],
+      sampleData: [
+        { category: 'A', value: 100 },
+        { category: 'B', value: 200 },
+      ],
+    }),
+  })),
+}));
 
-vi.mock('../src/data/fileRegistry', () => {
-  return {
-    FileRegistry: vi.fn().mockImplementation(() => ({
-      registerFile: vi.fn().mockResolvedValue(undefined),
-    })),
-  };
-});
+vi.mock('../src/ai/llmClient', () => ({
+  LLMClient: vi.fn().mockImplementation(() => mockLLMClient),
+}));
 
-vi.mock('../src/data/schemaInspector', () => {
-  return {
-    SchemaInspector: vi.fn().mockImplementation(() => ({
-      inspectTable: vi.fn().mockResolvedValue({
-        columns: [
-          { name: 'category', type: 'VARCHAR' },
-          { name: 'value', type: 'DOUBLE' },
-        ],
-        sampleData: [
-          { category: 'A', value: 100 },
-          { category: 'B', value: 200 },
-        ],
-      }),
-    })),
-  };
-});
+vi.mock('../src/ai/promptBuilder', () => ({
+  PromptBuilder: vi.fn().mockImplementation(() => ({
+    buildPrompt: vi.fn().mockReturnValue('test prompt'),
+  })),
+}));
 
-const mockLLMResponse = {
-  sql: 'SELECT category, SUM(value) as total FROM uploaded_data GROUP BY category',
-  widgetType: 'bar',
-  chartConfig: {
-    xAxisKey: 'category',
-    yAxisKeys: ['total'],
-    title: 'Total by Category',
-    description: 'Total value by category',
-  },
-};
-
-const mockLLMClient = {
-  generateSQLAndConfig: vi.fn().mockResolvedValue(mockLLMResponse),
-};
-
-vi.mock('../src/ai/llmClient', () => {
-  return {
-    LLMClient: vi.fn().mockImplementation(() => mockLLMClient),
-  };
-});
-
-vi.mock('../src/ai/promptBuilder', () => {
-  return {
-    PromptBuilder: vi.fn().mockImplementation(() => ({
-      buildPrompt: vi.fn().mockReturnValue('test prompt'),
-    })),
-  };
-});
-
-vi.mock('../src/ai/responseParser', () => {
-  return {
-    ResponseParser: vi.fn().mockImplementation(() => ({
-      parse: vi.fn().mockReturnValue(mockLLMResponse),
-    })),
-  };
-});
+vi.mock('../src/ai/responseParser', () => ({
+  ResponseParser: vi.fn().mockImplementation(() => ({
+    parse: vi.fn().mockReturnValue(mockLLMResponse),
+  })),
+}));
 
 const mockSelfHealingController = {
   executeWithRetry: vi.fn().mockResolvedValue({
@@ -103,14 +62,9 @@ const mockSelfHealingController = {
   }),
 };
 
-vi.mock('../src/ai/selfHealingController', () => {
-  return {
-    SelfHealingController: vi.fn().mockImplementation(() => mockSelfHealingController),
-  };
-});
-
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App from '../src/App';
+vi.mock('../src/ai/selfHealingController', () => ({
+  SelfHealingController: vi.fn().mockImplementation(() => mockSelfHealingController),
+}));
 
 describe('App (Phase 2)', () => {
   beforeEach(() => {
@@ -140,7 +94,14 @@ describe('App (Phase 2)', () => {
       },
     });
     mockSelfHealingController.executeWithRetry.mockResolvedValue({
-      ...mockLLMResponse,
+      sql: 'SELECT category, SUM(value) as total FROM uploaded_data GROUP BY category',
+      widgetType: 'bar',
+      chartConfig: {
+        xAxisKey: 'category',
+        yAxisKeys: ['total'],
+        title: 'Total by Category',
+        description: 'Total value by category',
+      },
       queryResult: [
         { category: 'A', total: 100 },
         { category: 'B', total: 200 },
@@ -223,16 +184,8 @@ describe('App (Phase 2)', () => {
   });
 
   it('shows error boundary on query error', async () => {
-    // Mock LLMClient to throw an error
-    const mockLLMClient = {
-      generateSQLAndConfig: vi.fn().mockRejectedValueOnce(new Error('API Error')),
-    };
-
-    vi.mock('../src/ai/llmClient', () => {
-      return {
-        LLMClient: vi.fn().mockImplementation(() => mockLLMClient),
-      };
-    });
+    // Mock selfHealingController to throw an error
+    mockSelfHealingController.executeWithRetry.mockRejectedValueOnce(new Error('API Error'));
 
     render(<App />);
     const fileInput = screen.getByLabelText(/upload zone/i).querySelector('input') as HTMLInputElement;
@@ -251,7 +204,7 @@ describe('App (Phase 2)', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/error/i)).toBeInTheDocument();
+      expect(screen.getByText(/api error/i)).toBeInTheDocument();
     });
   });
 });

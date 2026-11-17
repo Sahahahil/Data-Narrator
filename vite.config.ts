@@ -4,16 +4,23 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [
-    react(),
-    // Skip test files in Vite's transform pipeline
+    // Skip test files in Vite's module graph - MUST be first
     {
       name: 'skip-test-files',
+      enforce: 'pre',
+      resolveId(id) {
+        if (id.includes('/tests/') && (id.endsWith('.test.ts') || id.endsWith('.test.tsx'))) {
+          return { id: id + '?skip', external: true };
+        }
+      },
       load(id) {
         if (id.includes('/tests/') && (id.endsWith('.test.ts') || id.endsWith('.test.tsx'))) {
-          return { code: '', map: null };
+          // Return a minimal valid module that esbuild can parse
+          return { code: 'export default {}', map: null };
         }
       },
     },
+    react(),
   ],
   test: {
     globals: true,
