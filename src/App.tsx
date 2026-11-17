@@ -1,10 +1,57 @@
 import * as React from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { DuckDBManager } from './data/duckdbManager';
+import { FileRegistry } from './data/fileRegistry';
+import { SchemaInspector } from './data/schemaInspector';
+import { PromptBuilder } from './ai/promptBuilder';
+import { LLMClient } from './ai/llmClient';
+import { ResponseParser } from './ai/responseParser';
+import { SelfHealingController } from './ai/selfHealingController';
+import { createWidget } from './ui/widgetFactory';
+import { buildChartConfig } from './ui/chartConfigBuilder';
+import { generateNarrative } from './ui/narrativeGenerator';
+import { LoadingSpinner, ErrorBoundary } from './ui/loadingStates';
+import { ExportUtilities } from './widgets/exportUtilities';
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [widgetData, setWidgetData] = useState<any[]>([]);
+  const [widgetConfig, setWidgetConfig] = useState<any>(null);
+  const [widgetType, setWidgetType] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [queryError, setQueryError] = useState<string | null>(null);
+
+  // Services (initialized once)
+  const duckDBManagerRef = useRef<DuckDBManager | null>(null);
+  const fileRegistryRef = useRef<FileRegistry | null>(null);
+  const schemaInspectorRef = useRef<SchemaInspector | null>(null);
+  const promptBuilderRef = useRef<PromptBuilder | null>(null);
+  const llmClientRef = useRef<LLMClient | null>(null);
+  const responseParserRef = useRef<ResponseParser | null>(null);
+  const selfHealingControllerRef = useRef<SelfHealingController | null>(null);
+  const exportUtilitiesRef = useRef<ExportUtilities | null>(null);
+
+  // Initialize services once
+  useEffect(() => {
+    duckDBManagerRef.current = new DuckDBManager();
+    fileRegistryRef.current = new FileRegistry(duckDBManagerRef.current);
+    schemaInspectorRef.current = new SchemaInspector(duckDBManagerRef.current);
+    promptBuilderRef.current = new PromptBuilder();
+    llmClientRef.current = new LLMClient({
+      apiKey: import.meta.env.VITE_LLM_API_KEY || '',
+      endpoint: import.meta.env.VITE_LLM_ENDPOINT || 'https://api.openai.com/v1/chat/completions',
+      model: import.meta.env.VITE_LLM_MODEL || 'gpt-4',
+    });
+    responseParserRef.current = new ResponseParser();
+    selfHealingControllerRef.current = new SelfHealingController(
+      llmClientRef.current,
+      responseParserRef.current,
+      2 // maxRetries
+    );
+    exportUtilitiesRef.current = new ExportUtilities();
+  }, []);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -17,47 +64,115 @@ function App() {
         setError('File too large (max 100MB)');
         return;
       }
-      setIsLoading(true);
-      setError(null);
       setFile(f);
-      setTimeout(() => setIsLoading(false), 100);
+      setError(null);
     }
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.currentTarget.classList.add('border-primary', 'bg-card');
+    e.currentTarget.classList.add('border-accent', 'bg-accent-soft');
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.currentTarget.classList.remove('border-primary', 'bg-card');
+    e.preventDefault();
+    e.currentTarget.classList.remove('border-accent', 'bg-accent-soft');
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.currentTarget.classList.remove('border-primary', 'bg-card');
+    e.currentTarget.classList.remove('border-accent', 'bg-accent-soft');
     if (e.dataTransfer.files[0]) handleFileChange({ target: { files: e.dataTransfer.files } } as any);
   }, [handleFileChange]);
 
   const removeFile = useCallback(() => {
     setFile(null);
     setError(null);
+    setWidgetData([]);
+    setWidgetConfig(null);
+    setWidgetType(null);
+    setQuestion('');
+    setQueryError(null);
   }, []);
 
+  const handleQuestionSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!question.trim() || !file) return;
+
+    setLoading(true);
+    setQueryError(null);
+    setWidgetData([]);
+    setWidgetConfig(null);
+    setWidgetType(null);
+
+    try {
+      const duckDBManager = duckDBManagerRef.current!;
+      const fileRegistry = fileRegistryRef.current!;
+      const schemaInspector = schemaInspectorRef.current!;
+      const promptBuilder = promptBuilderRef.current!;
+      const selfHealingController = selfHealingControllerRef.current!;
+
+      await duckDBManager.initialize();
+      await fileRegistry.registerFile('uploaded_data', file);
+      const schema = await schemaInspector.inspectTable('uploaded_data');
+      const prompt = promptBuilder.buildPrompt(schema, question);
+
+      const queryExecutor = async (sql: string) => {
+        const conn = await duckDBManager.connect();
+        const result = await conn.query(sql);
+        const array = await result.toArray();
+        return array.map((row: any) => row.toJSON());
+      };
+
+      const result = await selfHealingController.executeWithRetry(
+        prompt,
+        queryExecutor,
+        schema
+      );
+
+      const chartConfig = buildChartConfig(result.chartConfig, result.widgetType);
+      setWidgetData(result.queryResult);
+      setWidgetConfig(chartConfig);
+      setWidgetType(result.widgetType);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unknown error occurred';
+      setQueryError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [question, file]);
+
+  const handleExportPNG = useCallback(() => {
+    if (exportUtilitiesRef.current) {
+      const container = document.querySelector('.chart-container') as HTMLElement | null;
+      if (container) {
+        exportUtilitiesRef.current.exportChartAsPNG(container, 'chart.png');
+      }
+    }
+  }, []);
+
+  const handleExportCSV = useCallback(() => {
+    if (exportUtilitiesRef.current && widgetData.length > 0) {
+      exportUtilitiesRef.current.exportDataAsCSV(widgetData, 'data.csv');
+    }
+  }, [widgetData]);
+
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      <header className="bg-card border-b border-border p-4">
-        <h1 className="text-2xl font-bold">Data Storyteller & BI Studio</h1>
-        <p className="text-sm text-muted-foreground">Phase 1: Foundation — Upload your data</p>
+    <div className="min-h-screen bg-ground text-text font-sans">
+      <header className="bg-surface border-b border-rule px-pad py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-title font-bold text-text">Data Storyteller & BI Studio</h1>
+            <p className="text-sm text-muted">Client-side data storytelling & BI studio</p>
+          </div>
+        </div>
       </header>
-      <main className="p-6 max-w-4xl mx-auto">
+      <main className="p-pad max-w-7xl mx-auto">
         {!file ? (
           <div className="mb-8">
-            <label className="block text-sm font-medium mb-3" htmlFor="file-upload">
-              Upload CSV or Parquet file
-            </label>
+            <label className="label">Upload CSV or Parquet file</label>
             <div
-              className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary transition-colors duration-200"
+              className="drop-zone"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -71,44 +186,111 @@ function App() {
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
-                disabled={isLoading}
               />
               <label htmlFor="file-upload" className="cursor-pointer">
-                <svg className="mx-auto h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg className="mx-auto h-12 w-12 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <p className="mt-2 text-lg">Drag & drop your file here, or click to browse</p>
-                <p className="text-sm text-muted-foreground mt-1">CSV or Parquet • Max 100MB</p>
-                {isLoading && (
-                  <div className="mt-4 flex items-center justify-center gap-2 text-primary">
-                    <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" aria-hidden="true">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span>Registering file...</span>
-                  </div>
-                )}
+                <p className="mt-2 text-lg text-text">Drag & drop your file here, or click to browse</p>
+                <p className="text-sm text-muted mt-1">CSV or Parquet • Max 100MB</p>
               </label>
             </div>
             {error && (
-              <p className="mt-3 text-destructive text-sm" role="alert">{error}</p>
+              <p className="mt-3 text-negative text-sm" role="alert">{error}</p>
             )}
           </div>
         ) : (
-          <div className="mb-8 p-4 bg-card rounded-lg border border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold">{file.name}</h2>
-                <p className="text-sm text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB • {file.type || 'unknown type'}</p>
+          <div className="space-y-6">
+            <div className="mb-4 p-4 bg-surface rounded-lg border border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-text">{file.name}</h2>
+                  <p className="text-sm text-muted">{(file.size / 1024 / 1024).toFixed(2)} MB • {file.type || 'unknown type'}</p>
+                </div>
+                <button
+                  onClick={removeFile}
+                  className="btn btn-ghost btn-sm"
+                >
+                  Remove
+                </button>
               </div>
-              <button
-                onClick={removeFile}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Remove
-              </button>
             </div>
-            <p className="mt-4 text-muted-foreground">File ready. Phase 2 will add query interface.</p>
+
+            <form onSubmit={handleQuestionSubmit} className="mb-8">
+              <label className="label">Ask a question about your data</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="e.g., Show total value by category"
+                  className="input flex-1"
+                  disabled={loading}
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !question.trim()}
+                  className="btn btn-primary"
+                >
+                  {loading ? 'Generating...' : 'Get Insights'}
+                </button>
+              </div>
+            </form>
+
+            {queryError && (
+              <div className="error-banner">
+                <p className="error-title">Error</p>
+                <p className="error-message">{queryError}</p>
+                <button
+                  onClick={() => handleQuestionSubmit({ preventDefault: () => {}, currentTarget: document.querySelector('form') } as React.FormEvent<HTMLFormElement>)}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="spinner-lg" />
+              </div>
+            )}
+
+            {widgetData.length > 0 && widgetConfig && widgetType && (
+              <div className="space-y-4">
+                <div className="chart-container">
+                  {(() => {
+                    const { type: WidgetComponent, config } = createWidget(widgetType, { ...widgetConfig, data: widgetData });
+                    return <WidgetComponent {...config} data={widgetData} />;
+                  })()}
+                </div>
+                <div className="prose prose-slate max-w-none mt-4">
+                  <p className="text-sm text-muted leading-relaxed">{widgetConfig.description}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExportPNG}
+                    className="export-btn"
+                    aria-label="Export chart as PNG"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export Chart (PNG)
+                  </button>
+                  <button
+                    onClick={handleExportCSV}
+                    className="export-btn"
+                    aria-label="Export data as CSV"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export Data (CSV)
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
