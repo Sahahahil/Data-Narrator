@@ -1,8 +1,7 @@
-import { QueryExecutor } from '../../src/data/queryExecutor';
-import { DuckDBManager } from '../../src/data/duckdbManager';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { executeQuery } from '../../src/data/queryExecutor';
 
-describe('QueryExecutor', () => {
-  let executor: QueryExecutor;
+describe('executeQuery', () => {
   let mockDuckDBManager: any;
   let mockConnection: any;
   let connectMock: any;
@@ -17,34 +16,31 @@ describe('QueryExecutor', () => {
     mockDuckDBManager = {
       connect: connectMock
     };
-    executor = new QueryExecutor(mockDuckDBManager);
   });
 
-  describe('execute()', () => {
-    it('should execute a query and return results', async () => {
-      const mockResult = [{ toJSON: () => ({ id: 1, name: 'test' }) }];
-      queryMock.mockResolvedValueOnce({
-        toArray: async () => mockResult
-      });
-      connectMock.mockResolvedValueOnce(mockConnection);
-
-      const sql = 'SELECT * FROM test';
-      const result = await executor.execute(sql);
-      
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({ id: 1, name: 'test' });
-      expect(connectMock).toHaveBeenCalled();
-      expect(queryMock).toHaveBeenCalledWith(sql);
+  it('should execute a query and return results', async () => {
+    const mockResult = [{ toJSON: () => ({ id: 1, name: 'test' }) }];
+    queryMock.mockResolvedValueOnce({
+      toArray: async () => mockResult
     });
+    connectMock.mockResolvedValueOnce(mockConnection);
 
-    it('should handle empty results', async () => {
-      queryMock.mockResolvedValueOnce({
-        toArray: async () => []
-      });
-      connectMock.mockResolvedValueOnce(mockConnection);
+    const sql = 'SELECT * FROM test';
+    const result = await executeQuery(mockDuckDBManager, sql);
 
-      const result = await executor.execute('SELECT * FROM empty');
-      expect(result).toHaveLength(0);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ id: 1, name: 'test' });
+    expect(connectMock).toHaveBeenCalled();
+    expect(queryMock).toHaveBeenCalledWith(sql);
+  });
+
+  it('should handle empty results', async () => {
+    queryMock.mockResolvedValueOnce({
+      toArray: async () => []
     });
+    connectMock.mockResolvedValueOnce(mockConnection);
+
+    const result = await executeQuery(mockDuckDBManager, 'SELECT * FROM empty');
+    expect(result).toHaveLength(0);
   });
 });

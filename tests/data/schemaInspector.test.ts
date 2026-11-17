@@ -1,8 +1,7 @@
-import { SchemaInspector } from '../../src/data/schemaInspector';
-import { DuckDBManager } from '../../src/data/duckdbManager';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { inspectTable } from '../../src/data/schemaInspector';
 
-describe('SchemaInspector', () => {
-  let inspector: SchemaInspector;
+describe('inspectTable', () => {
   let mockDuckDBManager: any;
   let mockConnection: any;
   let connectMock: any;
@@ -17,7 +16,6 @@ describe('SchemaInspector', () => {
     mockDuckDBManager = {
       connect: connectMock
     };
-    inspector = new SchemaInspector(mockDuckDBManager);
   });
 
   describe('inspectTable()', () => {
@@ -46,8 +44,8 @@ describe('SchemaInspector', () => {
         return Promise.resolve(sampleResult);
       });
 
-      const schema = await inspector.inspectTable('test_table');
-      
+      const schema = await inspectTable(mockDuckDBManager, 'test_table');
+
       expect(schema.columns).toEqual([
         { name: 'id', type: 'INTEGER' },
         { name: 'name', type: 'VARCHAR' },
@@ -63,7 +61,6 @@ describe('SchemaInspector', () => {
       const sampleResult = {
         toArray: vi.fn().mockResolvedValue([])
       };
-      // Add toJSON to empty array items (not needed for empty but for consistency)
       connectMock.mockResolvedValue(mockConnection);
       queryMock.mockImplementation((query: string) => {
         if (query.includes('DESCRIBE')) {
@@ -72,8 +69,8 @@ describe('SchemaInspector', () => {
         return Promise.resolve(sampleResult);
       });
 
-      const schema = await inspector.inspectTable('empty_table');
-      
+      const schema = await inspectTable(mockDuckDBManager, 'empty_table');
+
       expect(schema.columns).toEqual([]);
       expect(schema.sampleData).toEqual([]);
     });

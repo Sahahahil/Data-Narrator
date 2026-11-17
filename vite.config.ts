@@ -9,9 +9,5 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
-  worker: { format: 'es' }, // Enable Web Worker import
-  define: {
-    'import.meta.env.VITE_LLM_API_KEY': JSON.stringify(process.env.VITE_LLM_API_KEY || ''),
-    'import.meta.env.VITE_LLM_ENDPOINT': JSON.stringify(process.env.VITE_LLM_ENDPOINT || ''),
-  },
+  worker: { format: 'es' },
 });

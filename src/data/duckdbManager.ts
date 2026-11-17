@@ -35,10 +35,7 @@ export class DuckDBManager {
 
   async registerFile(name: string, file: File): Promise<void> {
     if (!this.initialized || !this.db) throw new Error('DuckDB not initialized');
-    const protocol = file.name.endsWith('.parquet')
-      ? duckdb.DuckDBDataProtocol.BROWSER_FILEREADER
-      : duckdb.DuckDBDataProtocol.BROWSER_FILEREADER;
-    await this.db.registerFileHandle(name, file, protocol, true);
+    await this.db.registerFileHandle(name, file, duckdb.DuckDBDataProtocol.BROWSER_FILEREADER, true);
   }
 
   async terminate() {

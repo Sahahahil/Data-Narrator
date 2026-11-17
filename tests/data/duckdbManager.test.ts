@@ -6,13 +6,9 @@ describe('DuckDBManager (API Contract)', () => {
   beforeEach(() => { manager = new DuckDBManager(); });
 
   describe('initialize()', () => {
-    it('should return a boolean', async () => {
+    it('should return boolean and set isInitialized', async () => {
       const result = await manager.initialize();
-      expect(typeof result).toBe('boolean');
-    });
-
-    it('should set isInitialized based on result', async () => {
-      await manager.initialize();
+      expect([true, false]).toContain(result);
       expect(typeof manager.isInitialized()).toBe('boolean');
     });
   });
