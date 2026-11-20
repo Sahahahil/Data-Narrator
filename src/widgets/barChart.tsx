@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useRef, useEffect } from 'react';
 import {
   BarChart as RechartsBarChart,
   Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell
@@ -17,12 +18,23 @@ export interface BarChartProps {
 export const BarChart: React.FC<BarChartProps> = ({
   data, xAxisKey, yAxisKeys, groupKey, title, description
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // ResizeObserver for chart resizing (Recharts ResponsiveContainer handles most cases)
+  useEffect(() => {
+    const ro = new ResizeObserver(() => {
+      // Recharts handles resize automatically via ResponsiveContainer
+    });
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   if (data.length === 0) {
     return (
       <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
         <h3 className="text-lg font-bold mb-1">{title}</h3>
         <p className="text-sm text-slate-400 mb-4">{description}</p>
-        <div className="h-64 flex items-center justify-center text-slate-500">
+        <div className="h-64 flex items-center justify-center text-slate-500" role="img" aria-label={`${title}: ${description}`}>
           No data available
         </div>
       </div>
@@ -47,7 +59,13 @@ export const BarChart: React.FC<BarChartProps> = ({
     <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
       <h3 className="text-lg font-bold mb-1">{title}</h3>
       <p className="text-sm text-slate-400 mb-4">{description}</p>
-      <div className="h-64 w-full">
+      <div
+        ref={containerRef}
+        className="h-64 w-full"
+        role="img"
+        aria-label={`${title}: ${description}`}
+        tabIndex={0}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <RechartsBarChart data={chartData} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -67,7 +85,7 @@ export const BarChart: React.FC<BarChartProps> = ({
                 radius={[0, 4, 4, 0]}
               >
                 {groupKey && chartData.map((d, i) => (
-                  <Cell key={i} fill={CHART_COLORS[chartData.findIndex(c => c.series === d.series && c[groupKey] === d[groupKey]) % CHART_COLORS.length]} />
+                  <Cell key={i} fill={CHART_COLORS[chartData.findIndex(c => c['series'] === d['series'] && c[groupKey] === d[groupKey]) % CHART_COLORS.length]} />
                 ))}
               </Bar>
             ))}

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useRef, useEffect } from 'react';
 import {
   ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
@@ -22,12 +23,23 @@ const CHART_COLORS = [
 export const ScatterPlot: React.FC<ScatterPlotProps> = ({
   data, xAxisKey, yAxisKeys, title, description
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // ResizeObserver for chart resizing
+  useEffect(() => {
+    const ro = new ResizeObserver(() => {
+      // Recharts handles resize automatically via ResponsiveContainer
+    });
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   if (data.length === 0) {
     return (
       <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
         <h3 className="text-lg font-bold mb-1">{title}</h3>
         <p className="text-sm text-slate-400 mb-4">{description}</p>
-        <div className="h-64 flex items-center justify-center text-slate-500">
+        <div className="h-64 flex items-center justify-center text-slate-500" role="img" aria-label={`${title}: ${description}`}>
           No data available
         </div>
       </div>
@@ -35,13 +47,19 @@ export const ScatterPlot: React.FC<ScatterPlotProps> = ({
   }
 
   // Use first yAxisKey for scatter
-  const yAxisKey = yAxisKeys[0];
+  const yAxisKey = yAxisKeys[0] ?? '';
 
   return (
     <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
       <h3 className="text-lg font-bold mb-1">{title}</h3>
       <p className="text-sm text-slate-400 mb-4">{description}</p>
-      <div className="h-64 w-full">
+      <div
+        ref={containerRef}
+        className="h-64 w-full"
+        role="img"
+        aria-label={`${title}: ${description}`}
+        tabIndex={0}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />

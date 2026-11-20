@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useRef, useEffect } from 'react';
 import {
   LineChart as RechartsLineChart,
   Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
@@ -23,12 +24,23 @@ interface GroupedDataPoint {
 export const LineChart: React.FC<LineChartProps> = ({
   data, xAxisKey, yAxisKeys, groupKey, title, description
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // ResizeObserver for chart resizing
+  useEffect(() => {
+    const ro = new ResizeObserver(() => {
+      // Recharts handles resize automatically via ResponsiveContainer
+    });
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   if (data.length === 0) {
     return (
       <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
         <h3 className="text-lg font-bold mb-1">{title}</h3>
         <p className="text-sm text-slate-400 mb-4">{description}</p>
-        <div className="h-64 flex items-center justify-center text-slate-500">
+        <div className="h-64 flex items-center justify-center text-slate-500" role="img" aria-label={`${title}: ${description}`}>
           No data available
         </div>
       </div>
@@ -55,7 +67,13 @@ export const LineChart: React.FC<LineChartProps> = ({
     <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
       <h3 className="text-lg font-bold mb-1">{title}</h3>
       <p className="text-sm text-slate-400 mb-4">{description}</p>
-      <div className="h-64 w-full">
+      <div
+        ref={containerRef}
+        className="h-64 w-full"
+        role="img"
+        aria-label={`${title}: ${description}`}
+        tabIndex={0}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <RechartsLineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
