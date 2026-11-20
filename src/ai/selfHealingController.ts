@@ -1,41 +1,12 @@
-interface LLMClient {
-  generateSQLAndConfig(prompt: string): Promise<LLMResponse>;
-}
+import { LLMClient, LLMResponse } from './llmClient';
+import { ResponseParser } from './responseParser';
+import { QueryExecutor } from '../data/queryExecutor';
+import { SchemaInspector, TableSchema } from '../data/schemaInspector';
 
-interface ResponseParser {
-  parse(response: string): ParsedResponse;
-}
-
-interface LLMResponse {
+export interface SelfHealingResult {
   sql: string;
-  widgetType: 'bar' | 'line' | 'scatter' | 'kpi';
-  chartConfig: ChartConfig;
-}
-
-interface ChartConfig {
-  xAxisKey: string;
-  yAxisKeys: string[];
-  groupKey?: string;
-  title: string;
-  description: string;
-}
-
-interface ParsedResponse {
-  sql: string;
-  widgetType: 'bar' | 'line' | 'scatter' | 'kpi';
-  chartConfig: ChartConfig;
-}
-
-interface TableSchema {
-  columns: { name: string; type: string }[];
-  sampleData: Record<string, unknown>[];
-  columnStats?: Record<string, { distinct: number; nulls: number; min: unknown; max: unknown }>;
-}
-
-interface QueryExecutorResult {
-  sql: string;
-  widgetType: 'bar' | 'line' | 'scatter' | 'kpi';
-  chartConfig: ChartConfig;
+  widgetType: LLMResponse['widgetType'];
+  chartConfig: LLMResponse['chartConfig'];
   queryResult: Record<string, unknown>[];
 }
 
@@ -43,51 +14,63 @@ export class SelfHealingController {
   constructor(
     private llmClient: LLMClient,
     private responseParser: ResponseParser,
+    private queryExecutor: QueryExecutor,
+    private schemaInspector: SchemaInspector,
     private maxRetries: number = 2
   ) {}
 
-  async executeWithRetry(
-    userQuestion: string,
-    queryExecutor: (sql: string) => Promise<Record<string, unknown>[]>,
-    schema?: TableSchema
-  ): Promise<QueryExecutorResult> {
-    let lastError: unknown;
+  async executeWithRetry(userQuestion: string, tableName: string = 'uploaded_data'): Promise<SelfHealingResult> {
+    let lastError: Error = new Error('Failed after all retries');
     let currentPrompt = userQuestion;
+    const schema = await this.schemaInspector.inspectTable(tableName);
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
-        // Generate SQL and config from LLM
         const llmResponse = await this.llmClient.generateSQLAndConfig(currentPrompt);
-        const parsedResponse = this.responseParser.parse(JSON.stringify(llmResponse));
+        const parsed = this.responseParser.parse(JSON.stringify(llmResponse));
+        const queryResult = await this.queryExecutor.execute(parsed.sql);
 
-        // Try to execute the SQL
-        const queryResult = await queryExecutor(parsedResponse.sql);
-
-        // If we get here, both LLM response and SQL execution succeeded
         return {
-          ...parsedResponse,
+          sql: parsed.sql,
+          widgetType: parsed.widgetType,
+          chartConfig: parsed.chartConfig,
           queryResult,
         };
       } catch (error) {
-        lastError = error;
+        lastError = error as Error;
+        if (attempt === this.maxRetries) break;
 
-        // If this is our last attempt, don't retry
-        if (attempt === this.maxRetries) {
-          break;
-        }
-
-        // Construct refinement prompt for LLM with schema info
-        const schemaInfo = schema ? JSON.stringify(schema) : 'unknown';
+        // Build refinement prompt with error context
+        const failedSql = (error as Record<string, unknown>)['sql'] as string | undefined;
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const errorSql = (error as Record<string, unknown>).sql as string | undefined;
-        currentPrompt = `Previous SQL: ${errorSql || 'unknown'}
-Error: ${errorMessage}
-Schema: ${schemaInfo}
-Original Question: ${userQuestion}
-Provide corrected SQL that addresses the error.`;
+        currentPrompt = this.buildRefinementPrompt(
+          userQuestion,
+          failedSql || 'unknown',
+          errorMessage,
+          schema,
+          tableName
+        );
       }
     }
+    throw lastError;
+  }
 
-    throw lastError instanceof Error ? lastError : new Error('Failed after all retries');
+  private buildRefinementPrompt(
+    originalQuestion: string,
+    failedSql: string,
+    errorMessage: string,
+    schema: TableSchema,
+    tableName: string
+  ): string {
+    const columnDefs = schema.columns.map(c => `${c.name} ${c.type}`).join(', ');
+    return `The previous SQL failed. Please provide corrected SQL.
+
+ORIGINAL QUESTION: ${originalQuestion}
+FAILED SQL: ${failedSql}
+ERROR: ${errorMessage}
+
+SCHEMA (Table "${tableName}"): ${columnDefs}
+
+Return ONLY the corrected JSON response with the same schema as before.`;
   }
 }

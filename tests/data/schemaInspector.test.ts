@@ -20,31 +20,70 @@ describe('SchemaInspector', () => {
     inspector = new SchemaInspector(mockDuckDBManager);
   });
 
+  const createMockRow = (data: Record<string, unknown>) => ({
+    ...data,
+    toJSON: () => data
+  });
+
+  const createMockResults = () => {
+    // DESCRIBE query result
+    const describeResult = {
+      toArray: vi.fn().mockResolvedValue([
+        { column_name: 'id', column_type: 'INTEGER' },
+        { column_name: 'name', column_type: 'VARCHAR' },
+        { column_name: 'value', column_type: 'DOUBLE' }
+      ])
+    };
+
+    // SELECT LIMIT 5 for sample values
+    const sampleResult = {
+      toArray: vi.fn().mockResolvedValue([
+        createMockRow({ id: 1, name: 'A', value: 10.5 }),
+        createMockRow({ id: 2, name: 'B', value: 20.3 })
+      ])
+    };
+
+    // QueryExecutor queries for getColumnStats
+    const distinctResult = {
+      toArray: vi.fn().mockResolvedValue([createMockRow({ distinct_count: '2' })])
+    };
+    const nullResult = {
+      toArray: vi.fn().mockResolvedValue([createMockRow({ null_count: '0' })])
+    };
+    const rowCountResult = {
+      toArray: vi.fn().mockResolvedValue([createMockRow({ count: '2' })])
+    };
+    const minMaxResult = {
+      toArray: vi.fn().mockResolvedValue([createMockRow({ min_val: 1, max_val: 20.3 })])
+    };
+
+    connectMock.mockResolvedValue(mockConnection);
+    queryMock.mockImplementation((query: string) => {
+      if (query.includes('DESCRIBE')) {
+        return Promise.resolve(describeResult);
+      }
+      if (query.includes('LIMIT 5')) {
+        return Promise.resolve(sampleResult);
+      }
+      if (query.includes('COUNT(DISTINCT')) {
+        return Promise.resolve(distinctResult);
+      }
+      if (query.includes('IS NULL')) {
+        return Promise.resolve(nullResult);
+      }
+      if (query.includes('COUNT(*) as count')) {
+        return Promise.resolve(rowCountResult);
+      }
+      if (query.includes('MIN(') && query.includes('MAX(')) {
+        return Promise.resolve(minMaxResult);
+      }
+      return Promise.resolve(sampleResult);
+    });
+  };
+
   describe('inspectTable()', () => {
     it('should extract column names and types', async () => {
-      // Mock DESCRIBE query result
-      const describeResult = {
-        toArray: vi.fn().mockResolvedValue([
-          { column_name: 'id', column_type: 'INTEGER' },
-          { column_name: 'name', column_type: 'VARCHAR' },
-          { column_name: 'value', column_type: 'DOUBLE' }
-        ])
-      };
-      // Mock SELECT LIMIT 5 for sample values
-      const sampleResult = {
-        toArray: vi.fn().mockResolvedValue([
-          { toJSON: () => ({ id: 1, name: 'A', value: 10.5 }) },
-          { toJSON: () => ({ id: 2, name: 'B', value: 20.3 }) }
-        ])
-      };
-      connectMock.mockResolvedValue(mockConnection);
-      queryMock.mockImplementation((query: string) => {
-        if (query.includes('DESCRIBE')) {
-          return Promise.resolve(describeResult);
-        }
-        // Mock SELECT LIMIT 5 for sample values
-        return Promise.resolve(sampleResult);
-      });
+      createMockResults();
 
       const schema = await inspector.inspectTable('test_table');
 
@@ -86,14 +125,42 @@ describe('SchemaInspector', () => {
       };
       const sampleResult = {
         toArray: vi.fn().mockResolvedValue([
-          { toJSON: () => ({ id: 1, category: 'A' }) },
-          { toJSON: () => ({ id: 2, category: 'B' }) }
+          createMockRow({ id: 1, category: 'A' }),
+          createMockRow({ id: 2, category: 'B' })
         ])
       };
+      const distinctResult = {
+        toArray: vi.fn().mockResolvedValue([createMockRow({ distinct_count: '2' })])
+      };
+      const nullResult = {
+        toArray: vi.fn().mockResolvedValue([createMockRow({ null_count: '0' })])
+      };
+      const rowCountResult = {
+        toArray: vi.fn().mockResolvedValue([createMockRow({ count: '2' })])
+      };
+      const minMaxResult = {
+        toArray: vi.fn().mockResolvedValue([createMockRow({ min_val: 1, max_val: 2 })])
+      };
+
       connectMock.mockResolvedValue(mockConnection);
       queryMock.mockImplementation((query: string) => {
         if (query.includes('DESCRIBE')) {
           return Promise.resolve(describeResult);
+        }
+        if (query.includes('LIMIT 5')) {
+          return Promise.resolve(sampleResult);
+        }
+        if (query.includes('COUNT(DISTINCT')) {
+          return Promise.resolve(distinctResult);
+        }
+        if (query.includes('IS NULL')) {
+          return Promise.resolve(nullResult);
+        }
+        if (query.includes('COUNT(*) as count')) {
+          return Promise.resolve(rowCountResult);
+        }
+        if (query.includes('MIN(') && query.includes('MAX(')) {
+          return Promise.resolve(minMaxResult);
         }
         return Promise.resolve(sampleResult);
       });
