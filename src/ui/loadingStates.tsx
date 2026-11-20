@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 export const SkeletonLoader = (): JSX.Element => (
   <div className="h-64 w-full animate-pulse bg-slate-800 rounded-xl" />
 );

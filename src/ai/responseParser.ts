@@ -31,19 +31,19 @@ export class ResponseParser {
     const obj = parsed as Record<string, unknown>;
 
     // Validate required fields
-    if (!obj.sql || typeof obj.sql !== 'string') {
+    if (!obj['sql'] || typeof obj['sql'] !== 'string') {
       throw new Error('Missing or invalid "sql" field');
     }
 
-    if (!obj.widgetType || !['bar', 'line', 'scatter', 'kpi'].includes(obj.widgetType as string)) {
+    if (!obj['widgetType'] || !['bar', 'line', 'scatter', 'kpi'].includes(obj['widgetType'] as string)) {
       throw new Error('Missing or invalid "widgetType" field. Must be one of: bar, line, scatter, kpi');
     }
 
-    if (!obj.chartConfig || typeof obj.chartConfig !== 'object') {
+    if (!obj['chartConfig'] || typeof obj['chartConfig'] !== 'object') {
       throw new Error('Missing or invalid "chartConfig" field');
     }
 
-    const chartConfig = obj.chartConfig as Record<string, unknown>;
+    const chartConfig = obj['chartConfig'] as Record<string, unknown>;
     const requiredChartFields = ['xAxisKey', 'yAxisKeys', 'title', 'description'];
     for (const field of requiredChartFields) {
       if (!chartConfig[field]) {
@@ -52,19 +52,19 @@ export class ResponseParser {
     }
 
     // Validate yAxisKeys is an array
-    if (!Array.isArray(chartConfig.yAxisKeys)) {
+    if (!Array.isArray(chartConfig['yAxisKeys'])) {
       throw new Error('chartConfig.yAxisKeys must be an array');
     }
 
     return {
-      sql: obj.sql,
-      widgetType: obj.widgetType as 'bar' | 'line' | 'scatter' | 'kpi',
+      sql: obj['sql'] as string,
+      widgetType: obj['widgetType'] as 'bar' | 'line' | 'scatter' | 'kpi',
       chartConfig: {
-        xAxisKey: chartConfig.xAxisKey as string,
-        yAxisKeys: chartConfig.yAxisKeys as string[],
-        groupKey: chartConfig.groupKey as string | undefined,
-        title: chartConfig.title as string,
-        description: chartConfig.description as string,
+        xAxisKey: chartConfig['xAxisKey'] as string,
+        yAxisKeys: chartConfig['yAxisKeys'] as string[],
+        groupKey: chartConfig['groupKey'] as string | undefined,
+        title: chartConfig['title'] as string,
+        description: chartConfig['description'] as string,
       },
     };
   }
