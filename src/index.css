@@ -44,6 +44,33 @@
   --fs-small: 12px;
 }
 
+/* Dark mode color overrides */
+.dark {
+  --ground: #0f172a;
+  --surface: #1e293b;
+  --raised: #334155;
+  --border: #334155;
+  --rule: #1e293b;
+  --control: #475569;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --accent: #f472b6;
+  --accent-soft: #781f4a;
+  --accent-track: #9d174d;
+  --accent-ink: #fce7f3;
+  --positive: #4ade80;
+  --negative: #f87171;
+  --warning: #fbbf24;
+  --chart-1: #f472b6;
+  --chart-2: #94a3b8;
+  --chart-3: #f9a8d4;
+  --pill-positive-bg: #052e16; --pill-positive-ink: #86efac;
+  --pill-negative-bg: #450a0a; --pill-negative-ink: #fca5a5;
+  --pill-warning-bg: #422006; --pill-warning-ink: #fde047;
+  --pill-neutral-bg: #1e293b; --pill-neutral-ink: #94a3b8;
+  --pill-accent-bg: #781f4a; --pill-accent-ink: #fce7f3;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -223,6 +250,18 @@
   /* Charts */
   .chart-container {
     @apply w-full h-72;
+  }
+
+  /* Dashboard Grid */
+  .dashboard-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  }
+
+  @media (max-width: 640px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Loading States */
