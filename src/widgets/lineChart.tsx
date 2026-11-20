@@ -5,13 +5,19 @@ import {
 } from 'recharts';
 import { CHART_COLORS } from '../ui/chartColors';
 
-interface LineChartProps {
-  data: any[];
+export interface LineChartProps {
+  data: Record<string, unknown>[];
   xAxisKey: string;
   yAxisKeys: string[];
   groupKey?: string;
   title: string;
   description: string;
+}
+
+interface GroupedDataPoint {
+  [key: string]: unknown;
+  value: number | string;
+  series: string;
 }
 
 export const LineChart: React.FC<LineChartProps> = ({
@@ -29,13 +35,29 @@ export const LineChart: React.FC<LineChartProps> = ({
     );
   }
 
+  // If groupKey is provided, transform data for multi-line chart
+  const chartData: (Record<string, unknown> | GroupedDataPoint)[] = groupKey
+    ? data.flatMap((row) =>
+        yAxisKeys.map((key) => ({
+          [xAxisKey]: row[xAxisKey],
+          [groupKey]: row[groupKey],
+          value: row[key],
+          series: key,
+        }))
+      )
+    : data;
+
+  const seriesNames = groupKey
+    ? [...new Set(chartData.map((d) => (d as GroupedDataPoint).series))]
+    : yAxisKeys;
+
   return (
     <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
       <h3 className="text-lg font-bold mb-1">{title}</h3>
       <p className="text-sm text-slate-400 mb-4">{description}</p>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsLineChart data={data}>
+          <RechartsLineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis dataKey={xAxisKey} stroke="#94a3b8" fontSize={12} />
             <YAxis stroke="#94a3b8" fontSize={12} />
@@ -44,15 +66,15 @@ export const LineChart: React.FC<LineChartProps> = ({
               labelStyle={{ color: '#e2e8f0' }}
             />
             <Legend />
-            {yAxisKeys.map((key, idx) => (
+            {seriesNames.map((seriesName, idx) => (
               <Line
-                key={key}
+                key={seriesName}
                 type="monotone"
-                dataKey={key}
+                dataKey="value"
                 stroke={CHART_COLORS[idx % CHART_COLORS.length]}
                 strokeWidth={2}
                 dot={false}
-                name={key}
+                name={seriesName}
               />
             ))}
           </RechartsLineChart>

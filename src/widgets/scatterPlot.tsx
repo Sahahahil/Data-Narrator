@@ -3,8 +3,8 @@ import {
   ScatterChart, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
 
-interface ScatterPlotProps {
-  data: any[];
+export interface ScatterPlotProps {
+  data: Record<string, unknown>[];
   xAxisKey: string;
   yAxisKeys: string[];
   title: string;

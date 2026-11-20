@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-interface KPICardProps {
-  data: any[];
+export interface KPICardProps {
+  data: Record<string, unknown>[];
   yAxisKeys: string[];
   title: string;
   description: string;

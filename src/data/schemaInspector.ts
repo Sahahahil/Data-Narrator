@@ -2,7 +2,10 @@ import { DuckDBManager } from './duckdbManager';
 import { AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 
 export interface ColumnInfo { name: string; type: string; }
-export interface TableSchema { columns: ColumnInfo[]; sampleData: any[]; columnStats?: Record<string, { distinct: number; nulls: number; min: any; max: any }>; }
+export interface ColumnStats { distinct: number; nulls: number; min: unknown; max: unknown; }
+export interface TableSchema { columns: ColumnInfo[]; sampleData: Record<string, unknown>[]; columnStats?: Record<string, ColumnStats>; }
+
+interface DescribeRow { column_name: string; column_type: string; }
 
 export class SchemaInspector {
   constructor(private duckDBManager: DuckDBManager) {}
@@ -16,15 +19,15 @@ export class SchemaInspector {
     const sampleResult = await conn.query(`SELECT * FROM ${tableName} LIMIT 5`);
     const sampleArray = await sampleResult.toArray();
 
-    const columns = describeArray.map((row: any) => ({
+    const columns = describeArray.map((row: DescribeRow) => ({
       name: row.column_name,
       type: row.column_type,
     }));
 
-    const sampleData = sampleArray.map((row: any) => row.toJSON());
+    const sampleData = sampleArray.map((row: { toJSON: () => Record<string, unknown> }) => row.toJSON());
 
     // Calculate column stats
-    const columnStats: Record<string, { distinct: number; nulls: number; min: any; max: any }> = {};
+    const columnStats: Record<string, ColumnStats> = {};
     for (const col of columns) {
       const values = sampleData.map(row => row[col.name]).filter(v => v !== null && v !== undefined);
       const distinctValues = new Set(values);

@@ -88,7 +88,9 @@ export class LLMClient {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new Error('Timeout');
+        const timeoutError = new Error('Timeout');
+        (timeoutError as Error & { cause?: unknown }).cause = error;
+        throw timeoutError;
       }
       throw error;
     }

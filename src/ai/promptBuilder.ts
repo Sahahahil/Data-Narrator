@@ -1,6 +1,24 @@
+interface ColumnInfo {
+  name: string;
+  type: string;
+}
+
+interface ColumnStats {
+  distinct: number;
+  nulls: number;
+  min: unknown;
+  max: unknown;
+}
+
+interface TableSchema {
+  columns: ColumnInfo[];
+  sampleData: Record<string, unknown>[];
+  columnStats?: Record<string, ColumnStats>;
+}
+
 export class PromptBuilder {
   buildPrompt(
-    schema: { columns: { name: string; type: string }[]; sampleData: any[]; columnStats?: Record<string, { distinct: number; nulls: number; min: any; max: any }> },
+    schema: TableSchema,
     userQuestion: string,
     tableName: string = 'orders'
   ): string {

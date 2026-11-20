@@ -19,8 +19,13 @@ if (typeof global.URL.createObjectURL === 'undefined') {
 
 // HTMLCanvasElement.getContext polyfill
 if (typeof HTMLCanvasElement.prototype.getContext === 'undefined') {
-  HTMLCanvasElement.prototype.getContext = () => ({
-    drawImage: () => {},
-    toBlob: (cb: Function) => cb(new Blob(['mock'])),
-  } as any);
+  HTMLCanvasElement.prototype.getContext = function (contextId: string) {
+    if (contextId === '2d') {
+      return {
+        drawImage: () => {},
+        toBlob: (cb: (blob: Blob | null) => void) => cb(new Blob(['mock'])),
+      } as unknown as CanvasRenderingContext2D;
+    }
+    return null;
+  } as unknown as HTMLCanvasElement['getContext'];
 }

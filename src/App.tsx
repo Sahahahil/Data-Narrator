@@ -9,17 +9,26 @@ import { ResponseParser } from './ai/responseParser';
 import { SelfHealingController } from './ai/selfHealingController';
 import { createWidget } from './ui/widgetFactory';
 import { buildChartConfig } from './ui/chartConfigBuilder';
-import { generateNarrative } from './ui/narrativeGenerator';
-import { LoadingSpinner, ErrorBoundary } from './ui/loadingStates';
 import { ExportUtilities } from './widgets/exportUtilities';
+
+interface ChartConfig {
+  dataKey: string;
+  xAxisKey: string;
+  yAxisKeys: string[];
+  groupKey?: string;
+  title: string;
+  description: string;
+}
+
+type WidgetType = 'line' | 'bar' | 'scatter' | 'kpi';
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [question, setQuestion] = useState('');
-  const [widgetData, setWidgetData] = useState<any[]>([]);
-  const [widgetConfig, setWidgetConfig] = useState<any>(null);
-  const [widgetType, setWidgetType] = useState<string | null>(null);
+  const [widgetData, setWidgetData] = useState<Record<string, unknown>[]>([]);
+  const [widgetConfig, setWidgetConfig] = useState<ChartConfig | null>(null);
+  const [widgetType, setWidgetType] = useState<WidgetType | null>(null);
   const [loading, setLoading] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
 
@@ -82,7 +91,12 @@ function App() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.currentTarget.classList.remove('border-accent', 'bg-accent-soft');
-    if (e.dataTransfer.files[0]) handleFileChange({ target: { files: e.dataTransfer.files } } as any);
+    if (e.dataTransfer.files[0]) {
+        const nativeEvent = {
+          target: { files: e.dataTransfer.files }
+        } as React.ChangeEvent<HTMLInputElement>;
+        handleFileChange(nativeEvent);
+      }
   }, [handleFileChange]);
 
   const removeFile = useCallback(() => {
@@ -121,7 +135,7 @@ function App() {
         const conn = await duckDBManager.connect();
         const result = await conn.query(sql);
         const array = await result.toArray();
-        return array.map((row: any) => row.toJSON());
+        return array.map((row: { toJSON: () => Record<string, unknown> }) => row.toJSON());
       };
 
       const result = await selfHealingController.executeWithRetry(

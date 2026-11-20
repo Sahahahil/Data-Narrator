@@ -1,4 +1,21 @@
-export function buildChartConfig(llmConfig: any, widgetType: string): any {
+interface LLMChartConfig {
+  xAxisKey: string;
+  yAxisKeys: string[];
+  groupKey?: string;
+  title: string;
+  description: string;
+}
+
+interface ChartConfig {
+  dataKey: string;
+  xAxisKey: string;
+  yAxisKeys: string[];
+  groupKey?: string;
+  title: string;
+  description: string;
+}
+
+export function buildChartConfig(llmConfig: LLMChartConfig, widgetType: string): ChartConfig {
   const base = {
     dataKey: widgetType === 'kpi' ? llmConfig.yAxisKeys?.[0] : llmConfig.xAxisKey,
     xAxisKey: llmConfig.xAxisKey,

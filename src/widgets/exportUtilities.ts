@@ -23,7 +23,7 @@ export class ExportUtilities {
     }
   }
 
-  exportDataAsCSV(data: any[], fileName: string): void {
+  exportDataAsCSV(data: Record<string, unknown>[], fileName: string): void {
     if (!data.length) return;
     const headers = Object.keys(data[0]);
     const csv = [headers.join(','), ...data.map(row => headers.map(h => JSON.stringify(row[h])).join(','))].join('\n');
