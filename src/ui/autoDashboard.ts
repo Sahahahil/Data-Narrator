@@ -1,7 +1,6 @@
 import { TableProfile } from '../data/dataProfiler';
 import { ChartConfigBuilder } from './chartConfigBuilder';
 import { QueryExecutor } from '../data/queryExecutor';
-import { SchemaInspector } from '../data/schemaInspector';
 
 export interface DashboardWidget {
   widgetType: 'bar' | 'line' | 'scatter' | 'kpi';
@@ -39,7 +38,6 @@ export class AutoDashboard {
   async executeDashboard(
     profile: TableProfile,
     queryExecutor: QueryExecutor,
-    _schemaInspector: SchemaInspector,
     tableName: string
   ): Promise<DashboardWidget[]> {
     const widgets = this.generateDashboard(profile);

@@ -2,14 +2,12 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { AutoDashboard } from '../../src/ui/autoDashboard';
 import { ChartConfigBuilder } from '../../src/ui/chartConfigBuilder';
 import { QueryExecutor } from '../../src/data/queryExecutor';
-import { SchemaInspector } from '../../src/data/schemaInspector';
 import { TableProfile, SuggestedWidget } from '../../src/data/dataProfiler';
 
 describe('AutoDashboard', () => {
   let autoDashboard: AutoDashboard;
   let mockChartConfigBuilder: ChartConfigBuilder;
   let mockQueryExecutor: QueryExecutor;
-  let mockSchemaInspector: SchemaInspector;
 
   const mockProfile: TableProfile = {
     rowCount: 100,
@@ -52,9 +50,6 @@ describe('AutoDashboard', () => {
     mockQueryExecutor = {
       execute: vi.fn()
     } as unknown as QueryExecutor;
-    mockSchemaInspector = {
-      inspectTable: vi.fn()
-    } as unknown as SchemaInspector;
 
     autoDashboard = new AutoDashboard(mockChartConfigBuilder);
   });
@@ -106,7 +101,6 @@ describe('AutoDashboard', () => {
       const widgets = await autoDashboard.executeDashboard(
         mockProfile,
         mockQueryExecutor,
-        mockSchemaInspector,
         'test_table'
       );
 
@@ -127,7 +121,6 @@ describe('AutoDashboard', () => {
       const widgets = await autoDashboard.executeDashboard(
         mockProfile,
         mockQueryExecutor,
-        mockSchemaInspector,
         'test_table'
       );
 
@@ -144,7 +137,6 @@ describe('AutoDashboard', () => {
       await autoDashboard.executeDashboard(
         mockProfile,
         mockQueryExecutor,
-        mockSchemaInspector,
         'test_table'
       );
 
@@ -173,7 +165,6 @@ describe('AutoDashboard', () => {
       await autoDashboard.executeDashboard(
         profileWithGroup,
         mockQueryExecutor,
-        mockSchemaInspector,
         'test_table'
       );
 
@@ -201,7 +192,6 @@ describe('AutoDashboard', () => {
       await autoDashboard.executeDashboard(
         profileWithLine,
         mockQueryExecutor,
-        mockSchemaInspector,
         'test_table'
       );
 
@@ -229,7 +219,6 @@ describe('AutoDashboard', () => {
       await autoDashboard.executeDashboard(
         profileWithScatter,
         mockQueryExecutor,
-        mockSchemaInspector,
         'test_table'
       );
 

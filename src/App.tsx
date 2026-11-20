@@ -219,7 +219,6 @@ function App() {
       const widgets = await autoDashboard.executeDashboard(
         profile,
         queryExecutor,
-        schemaInspector,
         'uploaded_data'
       );
 
