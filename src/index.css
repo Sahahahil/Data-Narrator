@@ -37,11 +37,11 @@
   --gap: 24px;
   --pad: 24px;
   --control-height: 32px;
-  --fs-title: 32px;
-  --fs-section: 18px;
+  --fs-title: clamp(48px, 8.4vw, 120px);
+  --fs-section: clamp(28px, 4vw, 40px);
   --fs-kpi: 24px;
-  --fs-body: 14px;
-  --fs-small: 12px;
+  --fs-body: 18px;
+  --fs-small: 13px;
 }
 
 /* Dark mode color overrides */
@@ -81,8 +81,10 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium tracking-tight;
+    @apply font-medium tracking-[-0.03em] leading-[1.05];
   }
+  h1 { font-size: var(--fs-title); }
+  h2 { @apply text-section; }
   code, pre, kbd, samp {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-variant-numeric: tabular-nums;
@@ -126,9 +128,9 @@
 
   /* Inputs */
   .input {
-    @apply w-full px-3 py-2 bg-surface border border-control rounded-control
+    @apply w-full px-3 py-2 bg-surface rounded-control
       text-text placeholder:text-muted
-      focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent
+      focus:outline-none focus:ring-2 focus:ring-accent
       disabled:opacity-50 disabled:cursor-not-allowed;
     @apply h-control-height text-sm;
   }
@@ -138,7 +140,7 @@
 
   /* Cards */
   .card {
-    @apply bg-surface border border-border rounded-card p-pad shadow-sm;
+    @apply bg-surface rounded-card p-pad;
   }
   .card-hover {
     @apply transition-shadow duration-150 hover:shadow-md;
@@ -151,7 +153,7 @@
 
   /* KPI Cards */
   .kpi-card {
-    @apply flex flex-col items-center justify-center p-6 bg-surface border border-border rounded-card;
+    @apply flex flex-col items-center justify-center p-6 bg-surface rounded-card;
   }
   .kpi-value {
     @apply text-kpi font-bold tabular-nums text-text;
@@ -162,16 +164,16 @@
 
   /* Tables */
   .table-container {
-    @apply overflow-x-auto rounded-card border border-border bg-surface;
+    @apply overflow-x-auto rounded-card bg-surface;
   }
   .table {
     @apply w-full border-collapse text-sm;
   }
   .table th {
-    @apply text-left px-4 py-2 text-xs font-medium text-muted bg-raised border-b border-rule;
+    @apply text-left px-4 py-2 text-xs font-medium text-muted bg-raised;
   }
   .table td {
-    @apply px-4 py-3 border-b border-rule text-text;
+    @apply px-4 py-3 text-text;
   }
   .table tbody tr {
     @apply hover:bg-raised/50 transition-colors;
@@ -200,7 +202,7 @@
 
   /* Tabs */
   .tabs {
-    @apply flex border-b border-rule mb-6;
+    @apply flex mb-6;
   }
   .tab {
     @apply px-4 py-2 text-sm font-medium text-muted border-b-2 border-transparent -mb-px
@@ -212,10 +214,10 @@
 
   /* Sidebar */
   .sidebar {
-    @apply w-sidebar-width bg-surface border-r border-rule h-full flex flex-col;
+    @apply w-sidebar-width bg-surface h-full flex flex-col;
   }
   .sidebar-header {
-    @apply px-4 py-4 border-b border-rule;
+    @apply px-4 py-4;
   }
   .sidebar-title {
     @apply text-sm font-semibold text-text;
@@ -228,12 +230,12 @@
     @apply bg-muted/50 text-accent font-medium;
   }
   .nav-section-label {
-    @apply px-3 pt-4 pb-1 text-xs font-medium text-muted uppercase tracking-wide;
+    @apply px-3 pt-4 pb-1 text-xs font-medium text-muted;
   }
 
   /* KPI Cards */
   .kpi-card {
-    @apply bg-surface border border-border rounded-card p-6;
+    @apply bg-surface rounded-card p-6;
   }
   .kpi-value {
     @apply text-3xl font-bold tabular-nums text-text;
@@ -252,13 +254,18 @@
     @apply w-full h-72;
   }
 
-  /* Dashboard Grid */
+  /* Dashboard Grid — Asymmetric: KPI row spans, charts alternate */
   .dashboard-grid {
     @apply grid gap-4;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    grid-template-columns: 1fr 1fr;
   }
 
-  @media (max-width: 640px) {
+  /* KPI cards span full width */
+  .dashboard-grid > .kpi-full {
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 1024px) {
     .dashboard-grid {
       grid-template-columns: 1fr;
     }
@@ -266,18 +273,18 @@
 
   /* Loading States */
   .skeleton {
-    @apply animate-pulse bg-raised rounded-control;
+    @apply bg-raised rounded-control;
   }
   .skeleton-text {
-    @apply h-4 bg-raised rounded animate-pulse;
+    @apply h-4 bg-raised rounded;
   }
   .skeleton-card {
-    @apply p-6 bg-surface border border-border rounded-card animate-pulse;
+    @apply p-6 bg-surface rounded-card;
   }
 
   /* Error Boundary */
   .error-banner {
-    @apply p-4 bg-negative/10 border border-negative/30 rounded-lg text-sm;
+    @apply p-4 bg-negative/20 rounded-lg text-sm;
   }
   .error-title { @apply font-bold text-negative mb-1; }
   .error-message { @apply text-sm text-negative/80 mb-2; }
@@ -292,7 +299,7 @@
 
   /* Tooltips */
   .tooltip {
-    @apply absolute z-50 px-2 py-1 bg-slate-900 text-white text-xs rounded shadow-lg opacity-0
+    @apply absolute z-50 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0
       transition-opacity duration-150 pointer-events-none;
   }
   .has-tooltip:hover .tooltip { @apply opacity-100; }
@@ -317,6 +324,80 @@
   .text-balance { text-wrap: balance; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Motion — Entrance & Scroll */
+  .motion-fade-in { animation: motion-fade-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .motion-rise { animation: motion-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .motion-scale-in { animation: motion-scale-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .motion-slide-up { animation: motion-slide-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+  /* Stagger delays */
+  .motion-delay-1 { animation-delay: 60ms; }
+  .motion-delay-2 { animation-delay: 120ms; }
+  .motion-delay-3 { animation-delay: 180ms; }
+  .motion-delay-4 { animation-delay: 240ms; }
+  .motion-delay-5 { animation-delay: 300ms; }
+
+  /* Scroll-triggered (via IntersectionObserver) */
+  .scroll-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .scroll-reveal.is-visible { opacity: 1; transform: translateY(0); }
+  .scroll-reveal-stagger > * { opacity: 0; transform: translateY(16px); transition: opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .scroll-reveal-stagger.is-visible > * { opacity: 1; transform: translateY(0); }
+  .scroll-reveal-stagger.is-visible > *:nth-child(1) { transition-delay: 60ms; }
+  .scroll-reveal-stagger.is-visible > *:nth-child(2) { transition-delay: 120ms; }
+  .scroll-reveal-stagger.is-visible > *:nth-child(3) { transition-delay: 180ms; }
+  .scroll-reveal-stagger.is-visible > *:nth-child(4) { transition-delay: 240ms; }
+  .scroll-reveal-stagger.is-visible > *:nth-child(5) { transition-delay: 300ms; }
+
+  /* Theme toggle rotation */
+  .theme-toggle-icon { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.3s; }
+  .theme-toggle-icon.rotated { transform: rotate(180deg); }
+
+  /* Chart draw animations (stroke-dashoffset) */
+  .chart-draw path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: chart-draw 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  @keyframes chart-draw { to { stroke-dashoffset: 0; } }
+
+  /* Error toast */
+  .toast-enter { animation: toast-enter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  @keyframes toast-enter { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .motion-fade-in,
+    .motion-rise,
+    .motion-scale-in,
+    .motion-slide-up,
+    .scroll-reveal,
+    .scroll-reveal-stagger > *,
+    .chart-draw path,
+    .toast-enter {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* Keyframes */
+  @keyframes motion-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes motion-rise {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes motion-scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes motion-slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-enter {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     *,
