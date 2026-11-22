@@ -1,5 +1,19 @@
 import { vi } from 'vitest';
 
+// IntersectionObserver polyfill for JSDOM
+if (typeof global.IntersectionObserver === 'undefined') {
+  class MockIntersectionObserver implements IntersectionObserver {
+    readonly root: Element | null = null;
+    readonly rootMargin: string = '0px';
+    readonly thresholds: ReadonlyArray<number> = [0];
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+    takeRecords = vi.fn().mockReturnValue([]);
+  }
+  global.IntersectionObserver = MockIntersectionObserver as any;
+}
+
 // Mock the DuckDBManager and its dependencies
 export const mockDuckDBManager = {
   initialize: vi.fn().mockResolvedValue(true),
