@@ -1,7 +1,8 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { executeQuery } from '../../src/data/queryExecutor';
+import { QueryExecutor } from '../../src/data/queryExecutor';
 
-describe('executeQuery', () => {
+describe('QueryExecutor', () => {
+  let executor: QueryExecutor;
   let mockDuckDBManager: any;
   let mockConnection: any;
   let connectMock: any;
@@ -16,6 +17,7 @@ describe('executeQuery', () => {
     mockDuckDBManager = {
       connect: connectMock
     };
+    executor = new QueryExecutor(mockDuckDBManager);
   });
 
   it('should execute a query and return results', async () => {
@@ -26,7 +28,7 @@ describe('executeQuery', () => {
     connectMock.mockResolvedValueOnce(mockConnection);
 
     const sql = 'SELECT * FROM test';
-    const result = await executeQuery(mockDuckDBManager, sql);
+    const result = await executor.execute(sql);
 
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({ id: 1, name: 'test' });
@@ -40,7 +42,7 @@ describe('executeQuery', () => {
     });
     connectMock.mockResolvedValueOnce(mockConnection);
 
-    const result = await executeQuery(mockDuckDBManager, 'SELECT * FROM empty');
+    const result = await executor.execute('SELECT * FROM empty');
     expect(result).toHaveLength(0);
   });
 });

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -58,7 +59,6 @@ module.exports = {
         'control-height': '32px',
       },
       fontSize: {
-        'title': '32px',
         'section': '18px',
         'kpi': '24px',
         'body': '14px',

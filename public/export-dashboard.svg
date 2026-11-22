@@ -1,0 +1,25 @@
+<svg width="800" height="450" viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg)"/>
+  <text x="40" y="40" font-family="DM Sans" font-size="18" font-weight="bold" fill="#f1f5f9">Export Dashboard to PDF</text>
+  <text x="40" y="60" font-family="DM Sans" font-size="12" fill="#94a3b8">4 charts • A4 format • High quality</text>
+  <!-- Preview of PDF pages -->
+  <rect x="40" y="80" width="340" height="170" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="210" y="170" font-family="DM Sans" font-size="12" font-weight="bold" fill="#f1f5f9" text-anchor="middle">Page 1: KPIs + Revenue by Product</text>
+  <rect x="420" y="80" width="340" height="170" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="590" y="170" font-family="DM Sans" font-size="12" font-weight="bold" fill="#f1f5f9" text-anchor="middle">Page 2: Revenue Over Time</text>
+  <rect x="40" y="270" width="340" height="170" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="210" y="360" font-family="DM Sans" font-size="12" font-weight="bold" fill="#f1f5f9" text-anchor="middle">Page 3: Revenue by Region</text>
+  <rect x="420" y="270" width="340" height="170" rx="4" fill="#1e293b" stroke="#334155"/>
+  <text x="590" y="360" font-family="DM Sans" font-size="12" font-weight="bold" fill="#f1f5f9" text-anchor="middle">Page 4: Product Mix</text>
+  <!-- Export button -->
+  <rect x="40" y="390" width="200" height="44" rx="6" fill="#f472b6"/>
+  <text x="140" y="418" font-family="DM Sans" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">Download PDF</text>
+  <rect x="260" y="390" width="180" height="44" rx="6" fill="#334155" stroke="#475569"/>
+  <text x="350" y="418" font-family="DM Sans" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">Copy Share Link</text>
+</svg>

@@ -1,12 +1,15 @@
-import { LineChart } from '../widgets/lineChart';
-import { BarChart } from '../widgets/barChart';
-import { ScatterPlot } from '../widgets/scatterPlot';
-import { KPICard } from '../widgets/kpiCard';
+import { LineChart, LineChartProps } from '../widgets/lineChart';
+import { BarChart, BarChartProps } from '../widgets/barChart';
+import { ScatterPlot, ScatterPlotProps } from '../widgets/scatterPlot';
+import { KPICard, KPICardProps } from '../widgets/kpiCard';
+import { CustomChart, CustomChartProps } from '../widgets/customChart';
 import type { ComponentType } from 'react';
+
+type ChartProps = LineChartProps | BarChartProps | ScatterPlotProps | KPICardProps | CustomChartProps;
 
 export interface WidgetComponent {
   type: ComponentType<any>;
-  config: any;
+  config: ChartProps;
 }
 
 const widgetMap: Record<string, ComponentType<any>> = {
@@ -14,9 +17,10 @@ const widgetMap: Record<string, ComponentType<any>> = {
   bar: BarChart,
   scatter: ScatterPlot,
   kpi: KPICard,
+  custom: CustomChart,
 };
 
-export function createWidget(widgetType: string, config: any): WidgetComponent {
+export function createWidget(widgetType: string, config: ChartProps): WidgetComponent {
   const Component = widgetMap[widgetType];
   if (!Component) throw new Error(`Unsupported widgetType: ${widgetType}`);
   return { type: Component, config };

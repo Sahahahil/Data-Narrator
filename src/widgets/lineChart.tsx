@@ -1,12 +1,14 @@
 import * as React from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import {
   LineChart as RechartsLineChart,
   Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
-import { CHART_COLORS } from '../ui/chartColors';
+import { getChartColors } from '../ui/chartColors';
+import { useFilter, applyFilter } from '../ui/FilterContext';
 
-interface LineChartProps {
-  data: any[];
+export interface LineChartProps {
+  data: Record<string, unknown>[];
   xAxisKey: string;
   yAxisKeys: string[];
   groupKey?: string;
@@ -14,28 +16,90 @@ interface LineChartProps {
   description: string;
 }
 
+interface GroupedDataPoint {
+  [key: string]: unknown;
+  value: number | string;
+  series: string;
+}
+
 export const LineChart: React.FC<LineChartProps> = ({
   data, xAxisKey, yAxisKeys, groupKey, title, description
 }) => {
-  if (data.length === 0) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { filter, isFiltered, clearFilter } = useFilter();
+
+  // ResizeObserver for chart resizing
+  useEffect(() => {
+    const ro = new ResizeObserver(() => {
+      // Recharts handles resize automatically via ResponsiveContainer
+    });
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Apply cross-filter
+  const filteredData = useMemo(() => applyFilter(data, filter), [data, filter]);
+
+  // Theme-aware chart colors
+  const chartColors = useMemo(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    return getChartColors(isDark);
+  }, []);
+
+  if (filteredData.length === 0) {
     return (
       <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
         <h3 className="text-lg font-bold mb-1">{title}</h3>
         <p className="text-sm text-slate-400 mb-4">{description}</p>
-        <div className="h-64 flex items-center justify-center text-slate-500">
+        <div className="h-64 flex items-center justify-center text-slate-500" role="img" aria-label={`${title}: ${description}`}>
           No data available
         </div>
       </div>
     );
   }
 
+  // If groupKey is provided, transform data for multi-line chart
+  const chartData: (Record<string, unknown> | GroupedDataPoint)[] = groupKey
+    ? filteredData.flatMap((row) =>
+        yAxisKeys.map((key) => ({
+          [xAxisKey]: row[xAxisKey],
+          [groupKey]: row[groupKey],
+          value: row[key],
+          series: key,
+        }))
+      )
+    : filteredData;
+
+  const seriesNames = groupKey
+    ? [...new Set(chartData.map((d) => (d as GroupedDataPoint).series))]
+    : yAxisKeys;
+
   return (
     <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
-      <h3 className="text-lg font-bold mb-1">{title}</h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-lg font-bold">{title}</h3>
+        {isFiltered && (
+          <button
+            onClick={clearFilter}
+            className="text-xs text-accent hover:underline"
+            aria-label="Clear cross-filter"
+          >
+            Clear filter
+          </button>
+        )}
+      </div>
       <p className="text-sm text-slate-400 mb-4">{description}</p>
-      <div className="h-64 w-full">
+      <div
+        ref={containerRef}
+        className="h-64 w-full"
+        role="img"
+        aria-label={`${title}: ${description}`}
+        tabIndex={0}
+      >
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsLineChart data={data}>
+          <RechartsLineChart
+            data={chartData}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis dataKey={xAxisKey} stroke="#94a3b8" fontSize={12} />
             <YAxis stroke="#94a3b8" fontSize={12} />
@@ -43,16 +107,16 @@ export const LineChart: React.FC<LineChartProps> = ({
               contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
               labelStyle={{ color: '#e2e8f0' }}
             />
-            <Legend />
-            {yAxisKeys.map((key, idx) => (
+            <Legend onClick={() => { if (isFiltered) clearFilter(); }} />
+            {seriesNames.map((seriesName, idx) => (
               <Line
-                key={key}
+                key={seriesName}
                 type="monotone"
-                dataKey={key}
-                stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                dataKey="value"
+                stroke={chartColors[idx % chartColors.length]}
                 strokeWidth={2}
                 dot={false}
-                name={key}
+                name={seriesName}
               />
             ))}
           </RechartsLineChart>

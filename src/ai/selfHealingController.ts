@@ -1,48 +1,76 @@
+import { LLMClient, LLMResponse } from './llmClient';
+import { ResponseParser } from './responseParser';
+import { QueryExecutor } from '../data/queryExecutor';
+import { SchemaInspector, TableSchema } from '../data/schemaInspector';
+
+export interface SelfHealingResult {
+  sql: string;
+  widgetType: LLMResponse['widgetType'];
+  chartConfig: LLMResponse['chartConfig'];
+  queryResult: Record<string, unknown>[];
+}
+
 export class SelfHealingController {
   constructor(
-    private llmClient: any,
-    private responseParser: any,
+    private llmClient: LLMClient,
+    private responseParser: ResponseParser,
+    private queryExecutor: QueryExecutor,
+    private schemaInspector: SchemaInspector,
     private maxRetries: number = 2
   ) {}
 
-  async executeWithRetry(
-    userQuestion: string,
-    queryExecutor: (sql: string) => Promise<any>,
-    schema: any = {}
-  ): Promise<any> {
-    let lastError: any;
+  async executeWithRetry(userQuestion: string, tableName: string = 'uploaded_data'): Promise<SelfHealingResult> {
+    let lastError: Error = new Error('Failed after all retries');
     let currentPrompt = userQuestion;
-    
+    const schema = await this.schemaInspector.inspectTable(tableName);
+
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
-        // Generate SQL and config from LLM
         const llmResponse = await this.llmClient.generateSQLAndConfig(currentPrompt);
-        const parsedResponse = this.responseParser.parse(JSON.stringify(llmResponse));
-        
-        // Try to execute the SQL
-        const queryResult = await queryExecutor(parsedResponse.sql);
-        
-        // If we get here, both LLM response and SQL execution succeeded
+        const parsed = this.responseParser.parse(JSON.stringify(llmResponse));
+        const queryResult = await this.queryExecutor.execute(parsed.sql);
+
         return {
-          ...parsedResponse,
-          queryResult
+          sql: parsed.sql,
+          widgetType: parsed.widgetType,
+          chartConfig: parsed.chartConfig,
+          queryResult,
         };
       } catch (error) {
-        lastError = error;
-        
-        // If this is our last attempt, don't retry
-        if (attempt === this.maxRetries) {
-          break;
-        }
-        
-        // Construct refinement prompt for LLM
-        // In a real implementation, we'd include schema info
-        currentPrompt = `Previous SQL: ${(error as any).sql || 'unknown'}
-Error: ${(error as any).message}
-Please provide corrected SQL that addresses the error.`;
+        lastError = error as Error;
+        if (attempt === this.maxRetries) break;
+
+        // Build refinement prompt with error context
+        const failedSql = (error as Record<string, unknown>)['sql'] as string | undefined;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        currentPrompt = this.buildRefinementPrompt(
+          userQuestion,
+          failedSql || 'unknown',
+          errorMessage,
+          schema,
+          tableName
+        );
       }
     }
-    
-    throw lastError || new Error('Failed after all retries');
+    throw lastError;
+  }
+
+  private buildRefinementPrompt(
+    originalQuestion: string,
+    failedSql: string,
+    errorMessage: string,
+    schema: TableSchema,
+    tableName: string
+  ): string {
+    const columnDefs = schema.columns.map(c => `${c.name} ${c.type}`).join(', ');
+    return `The previous SQL failed. Please provide corrected SQL.
+
+ORIGINAL QUESTION: ${originalQuestion}
+FAILED SQL: ${failedSql}
+ERROR: ${errorMessage}
+
+SCHEMA (Table "${tableName}"): ${columnDefs}
+
+Return ONLY the corrected JSON response with the same schema as before.`;
   }
 }

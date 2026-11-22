@@ -1,14 +1,33 @@
-export function buildChartConfig(llmConfig: any, widgetType: string): any {
-  const base = {
-    dataKey: widgetType === 'kpi' ? llmConfig.yAxisKeys?.[0] : llmConfig.xAxisKey,
-    xAxisKey: llmConfig.xAxisKey,
-    yAxisKeys: llmConfig.yAxisKeys,
-    title: llmConfig.title,
-    description: llmConfig.description,
-  };
+interface LLMChartConfig {
+  xAxisKey: string;
+  yAxisKeys: string[];
+  groupKey?: string;
+  title: string;
+  description: string;
+}
 
-  if (llmConfig.groupKey) {
-    return { ...base, groupKey: llmConfig.groupKey };
+interface ChartConfig {
+  dataKey: string;
+  xAxisKey: string;
+  yAxisKeys: string[];
+  groupKey?: string;
+  title: string;
+  description: string;
+}
+
+export class ChartConfigBuilder {
+  buildChartConfig(llmConfig: LLMChartConfig, widgetType: string): ChartConfig {
+    const base = {
+      dataKey: widgetType === 'kpi' ? (llmConfig.yAxisKeys[0] ?? '') : llmConfig.xAxisKey,
+      xAxisKey: llmConfig.xAxisKey,
+      yAxisKeys: llmConfig.yAxisKeys,
+      title: llmConfig.title,
+      description: llmConfig.description,
+    };
+
+    if (llmConfig.groupKey) {
+      return { ...base, groupKey: llmConfig.groupKey };
+    }
+    return base;
   }
-  return base;
 }

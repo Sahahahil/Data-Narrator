@@ -1,0 +1,81 @@
+// Comprehensive Sample Dataset — Multi-domain Business Data
+// Rich enough to trigger ALL 5 dashboard templates + auto-dashboard
+// Covers: Sales, Marketing, Product, Finance, General Overview
+
+export const SAMPLE_CSV = `date,product,category,region,channel,revenue,quantity,customer_type,campaign,leads,conversions,spend,feature,usage_count,dau,retention_rate,cohort_week,sessions,net_revenue,expenses,margin,profit
+2024-01-01,Espresso,Coffee,North,organic,120,24,Regular,New Year Promo,15,3,45,,,1200,0.85,2024-W1,45,105,15,0.875,90
+2024-01-01,Latte,Coffee,North,organic,180,20,Regular,New Year Promo,18,4,50,,,1200,0.85,2024-W1,45,155,25,0.861,130
+2024-01-01,Cappuccino,Coffee,North,paid_social,150,18,Premium,New Year Promo,20,5,60,,,1200,0.85,2024-W1,45,130,20,0.867,110
+2024-01-01,Croissant,Pastry,North,email,90,15,Regular,New Year Promo,12,2,30,,,1200,0.85,2024-W1,45,75,15,0.833,60
+2024-01-01,Muffin,Pastry,North,organic,75,12,Premium,New Year Promo,10,2,25,,,1200,0.85,2024-W1,45,65,10,0.867,55
+2024-01-02,Espresso,Coffee,South,paid_search,200,40,Regular,Winter Sale,25,6,75,mobile_app,1200,1500,0.82,2024-W1,45,170,30,0.85,140
+2024-01-02,Latte,Coffee,South,paid_search,270,30,Regular,Winter Sale,28,7,80,mobile_app,1200,1500,0.82,2024-W1,45,230,40,0.852,190
+2024-01-02,Cappuccino,Coffee,South,organic,225,27,Premium,Winter Sale,22,5,65,mobile_app,1200,1500,0.82,2024-W1,45,190,35,0.844,155
+2024-01-02,Croissant,Pastry,South,referral,120,20,Regular,Winter Sale,18,4,40,mobile_app,1200,1500,0.82,2024-W1,45,100,20,0.833,80
+2024-01-02,Muffin,Pastry,South,email,100,16,Premium,Winter Sale,15,3,35,mobile_app,1200,1500,0.82,2024-W1,45,85,15,0.85,70
+2024-01-03,Espresso,Coffee,East,organic,160,32,Regular,New Year Promo,18,4,55,analytics_dashboard,800,1100,0.88,2024-W1,45,140,20,0.875,120
+2024-01-03,Latte,Coffee,East,paid_social,225,25,Regular,New Year Promo,20,5,60,analytics_dashboard,800,1100,0.88,2024-W1,45,195,30,0.867,165
+2024-01-03,Cappuccino,Coffee,East,organic,180,22,Premium,New Year Promo,25,6,70,analytics_dashboard,800,1100,0.88,2024-W1,45,155,25,0.861,130
+2024-01-03,Croissant,Pastry,East,paid_search,105,17,Regular,New Year Promo,15,3,35,analytics_dashboard,800,1100,0.88,2024-W1,45,90,15,0.857,75
+2024-01-03,Muffin,Pastry,East,referral,85,14,Premium,New Year Promo,12,2,30,analytics_dashboard,800,1100,0.88,2024-W1,45,72,13,0.847,59
+2024-01-04,Espresso,Coffee,West,paid_social,140,28,Regular,Winter Sale,22,5,60,collaboration_tools,950,1300,0.79,2024-W1,45,120,20,0.857,100
+2024-01-04,Latte,Coffee,West,organic,195,21,Regular,Winter Sale,24,6,65,collaboration_tools,950,1300,0.79,2024-W1,45,165,30,0.846,135
+2024-01-04,Cappuccino,Coffee,West,paid_search,165,19,Premium,Winter Sale,20,4,55,collaboration_tools,950,1300,0.79,2024-W1,45,140,25,0.848,115
+2024-01-04,Croissant,Pastry,West,email,90,15,Regular,Winter Sale,14,3,30,collaboration_tools,950,1300,0.79,2024-W1,45,75,15,0.833,60
+2024-01-04,Muffin,Pastry,West,organic,70,11,Premium,Winter Sale,10,2,25,collaboration_tools,950,1300,0.79,2024-W1,45,60,10,0.857,50
+2024-01-05,Espresso,Coffee,North,organic,130,26,Regular,New Year Promo,16,4,50,,,1250,0.84,2024-W1,45,115,15,0.885,100
+2024-01-05,Latte,Coffee,North,paid_social,195,22,Regular,New Year Promo,19,5,55,,,1250,0.84,2024-W1,45,170,25,0.872,145
+2024-01-05,Cappuccino,Coffee,North,organic,165,20,Premium,New Year Promo,22,5,60,,,1250,0.84,2024-W1,45,145,20,0.879,125
+2024-01-05,Croissant,Pastry,North,referral,100,16,Regular,New Year Promo,13,3,35,,,1250,0.84,2024-W1,45,85,15,0.85,70
+2024-01-05,Muffin,Pastry,North,email,80,13,Premium,New Year Promo,11,2,28,,,1250,0.84,2024-W1,45,68,12,0.85,56
+2024-01-06,Espresso,Coffee,South,paid_search,210,42,Regular,Winter Sale,26,7,80,mobile_app,1300,1550,0.81,2024-W1,45,180,30,0.857,150
+2024-01-06,Latte,Coffee,South,paid_search,285,32,Regular,Winter Sale,29,8,85,mobile_app,1300,1550,0.81,2024-W1,45,245,40,0.86,205
+2024-01-06,Cappuccino,Coffee,South,organic,240,28,Premium,Winter Sale,23,6,70,mobile_app,1300,1550,0.81,2024-W1,45,205,35,0.854,170
+2024-01-06,Croissant,Pastry,South,referral,130,22,Regular,Winter Sale,17,4,42,mobile_app,1300,1550,0.81,2024-W1,45,110,20,0.846,90
+2024-01-06,Muffin,Pastry,South,email,110,18,Premium,Winter Sale,14,3,38,mobile_app,1300,1550,0.81,2024-W1,45,92,18,0.836,74
+2024-01-07,Espresso,Coffee,East,organic,170,34,Regular,New Year Promo,19,5,58,analytics_dashboard,850,1150,0.87,2024-W1,45,150,20,0.882,130
+2024-01-07,Latte,Coffee,East,paid_social,240,27,Regular,New Year Promo,21,6,62,analytics_dashboard,850,1150,0.87,2024-W1,45,205,35,0.854,170
+2024-01-07,Cappuccino,Coffee,East,organic,195,23,Premium,New Year Promo,24,6,72,analytics_dashboard,850,1150,0.87,2024-W1,45,165,30,0.846,135
+2024-01-07,Croissant,Pastry,East,paid_search,110,18,Regular,New Year Promo,15,3,38,analytics_dashboard,850,1150,0.87,2024-W1,45,95,15,0.864,80
+2024-01-07,Muffin,Pastry,East,referral,90,15,Premium,New Year Promo,13,2,32,analytics_dashboard,850,1150,0.87,2024-W1,45,76,14,0.844,62
+2024-01-08,Espresso,Coffee,West,paid_social,150,30,Regular,Winter Sale,21,5,58,collaboration_tools,1000,1350,0.78,2024-W1,45,125,25,0.833,100
+2024-01-08,Latte,Coffee,West,organic,210,23,Regular,Winter Sale,23,6,65,collaboration_tools,1000,1350,0.78,2024-W1,45,180,30,0.857,150
+2024-01-08,Cappuccino,Coffee,West,paid_search,180,21,Premium,Winter Sale,19,5,58,collaboration_tools,1000,1350,0.78,2024-W1,45,155,25,0.861,130
+2024-01-08,Croissant,Pastry,West,email,95,16,Regular,Winter Sale,14,3,32,collaboration_tools,1000,1350,0.78,2024-W1,45,80,15,0.842,65
+2024-01-08,Muffin,Pastry,West,organic,75,12,Premium,Winter Sale,11,2,27,collaboration_tools,1000,1350,0.78,2024-W1,45,65,10,0.867,55
+2024-01-09,Espresso,Coffee,North,organic,125,25,Regular,New Year Promo,17,4,52,,,1280,0.83,2024-W2,45,110,15,0.88,95
+2024-01-09,Latte,Coffee,North,paid_social,188,21,Regular,New Year Promo,20,5,58,,,1280,0.83,2024-W2,45,165,23,0.878,142
+2024-01-09,Cappuccino,Coffee,North,organic,158,19,Premium,New Year Promo,21,5,55,,,1280,0.83,2024-W2,45,138,20,0.873,118
+2024-01-09,Croissant,Pastry,North,referral,95,16,Regular,New Year Promo,14,3,35,,,1280,0.83,2024-W2,45,80,15,0.842,65
+2024-01-09,Muffin,Pastry,North,email,78,13,Premium,New Year Promo,12,2,28,,,1280,0.83,2024-W2,45,66,12,0.846,54
+2024-01-10,Espresso,Coffee,South,paid_search,205,41,Regular,Winter Sale,27,7,82,mobile_app,1350,1600,0.80,2024-W2,45,175,30,0.854,145
+2024-01-10,Latte,Coffee,South,paid_search,278,31,Regular,Winter Sale,28,8,84,mobile_app,1350,1600,0.80,2024-W2,45,238,40,0.856,198
+2024-01-10,Cappuccino,Coffee,South,organic,233,27,Premium,Winter Sale,22,6,68,mobile_app,1350,1600,0.80,2024-W2,45,198,35,0.85,163
+2024-01-10,Croissant,Pastry,South,referral,125,21,Regular,Winter Sale,16,4,40,mobile_app,1350,1600,0.80,2024-W2,45,105,20,0.84,85
+2024-01-10,Muffin,Pastry,South,email,105,17,Premium,Winter Sale,13,3,36,mobile_app,1350,1600,0.80,2024-W2,45,88,17,0.838,71
+2024-01-11,Espresso,Coffee,East,organic,165,33,Regular,New Year Promo,18,5,56,analytics_dashboard,900,1200,0.86,2024-W2,45,145,20,0.879,125
+2024-01-11,Latte,Coffee,East,paid_social,233,26,Regular,New Year Promo,20,5,60,analytics_dashboard,900,1200,0.86,2024-W2,45,198,35,0.85,163
+2024-01-11,Cappuccino,Coffee,East,organic,188,22,Premium,New Year Promo,23,6,68,analytics_dashboard,900,1200,0.86,2024-W2,45,160,28,0.851,132
+2024-01-11,Croissant,Pastry,East,paid_search,108,17,Regular,New Year Promo,14,3,36,analytics_dashboard,900,1200,0.86,2024-W2,45,92,16,0.852,76
+2024-01-11,Muffin,Pastry,East,referral,88,14,Premium,New Year Promo,12,2,30,analytics_dashboard,900,1200,0.86,2024-W2,45,74,14,0.841,60
+2024-01-12,Espresso,Coffee,West,paid_social,145,29,Regular,Winter Sale,20,5,55,collaboration_tools,1050,1400,0.77,2024-W2,45,122,23,0.841,99
+2024-01-12,Latte,Coffee,West,organic,205,22,Regular,Winter Sale,22,6,62,collaboration_tools,1050,1400,0.77,2024-W2,45,175,30,0.854,145
+2024-01-12,Cappuccino,Coffee,West,paid_search,175,20,Premium,Winter Sale,18,5,55,collaboration_tools,1050,1400,0.77,2024-W2,45,150,25,0.857,125
+2024-01-12,Croissant,Pastry,West,email,92,15,Regular,Winter Sale,13,3,30,collaboration_tools,1050,1400,0.77,2024-W2,45,78,14,0.848,64
+2024-01-12,Muffin,Pastry,West,organic,72,11,Premium,Winter Sale,10,2,26,collaboration_tools,1050,1400,0.77,2024-W2,45,62,10,0.861,52
+2024-01-13,Espresso,Coffee,North,organic,135,27,Regular,New Year Promo,16,4,50,,,1300,0.82,2024-W2,45,118,17,0.874,101
+2024-01-13,Latte,Coffee,North,paid_social,202,23,Regular,New Year Promo,19,5,56,,,1300,0.82,2024-W2,45,175,25,0.875,150
+2024-01-13,Cappuccino,Coffee,North,organic,172,21,Premium,New Year Promo,22,5,60,,,1300,0.82,2024-W2,45,150,22,0.872,128
+2024-01-13,Croissant,Pastry,North,referral,102,17,Regular,New Year Promo,13,3,34,,,1300,0.82,2024-W2,45,87,15,0.853,72
+2024-01-13,Muffin,Pastry,North,email,82,13,Premium,New Year Promo,11,2,28,,,1300,0.82,2024-W2,45,70,12,0.854,58
+2024-01-14,Espresso,Coffee,South,paid_search,215,43,Regular,Winter Sale,26,7,80,mobile_app,1400,1650,0.79,2024-W2,45,185,30,0.86,155
+2024-01-14,Latte,Coffee,South,paid_search,292,33,Regular,Winter Sale,29,8,85,mobile_app,1400,1650,0.79,2024-W2,45,250,42,0.856,208
+2024-01-14,Cappuccino,Coffee,South,organic,245,28,Premium,Winter Sale,23,6,68,mobile_app,1400,1650,0.79,2024-W2,45,210,35,0.857,175
+2024-01-14,Croissant,Pastry,South,referral,128,21,Regular,Winter Sale,17,4,41,mobile_app,1400,1650,0.79,2024-W2,45,108,20,0.844,88
+2024-01-14,Muffin,Pastry,South,email,108,18,Premium,Winter Sale,14,3,37,mobile_app,1400,1650,0.79,2024-W2,45,91,17,0.843,74`;
+
+export const SAMPLE_FILE_NAME = 'business-sample-data.csv';
+
+export function createSampleFile(): File {
+  return new File([SAMPLE_CSV], SAMPLE_FILE_NAME, { type: 'text/csv' });
+}

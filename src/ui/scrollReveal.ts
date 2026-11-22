@@ -1,0 +1,72 @@
+import { useEffect, useRef, useState } from 'react';
+
+interface ScrollRevealOptions {
+  threshold?: number;
+  rootMargin?: string;
+  triggerOnce?: boolean;
+}
+
+export function useScrollReveal(options: ScrollRevealOptions = {}) {
+  const { threshold = 0.1, rootMargin = '0px', triggerOnce = true } = options;
+  const [isVisible, setIsVisible] = useState(false);
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          if (triggerOnce) observer.unobserve(element);
+        } else if (!triggerOnce) {
+          setIsVisible(false);
+        }
+      },
+      { threshold, rootMargin }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [threshold, rootMargin, triggerOnce]);
+
+  return { ref: elementRef, isVisible };
+}
+
+export function useStaggeredReveal(itemCount: number, options: ScrollRevealOptions = {}) {
+  const { threshold = 0.1, rootMargin = '0px', triggerOnce = true } = options;
+  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
+  const elementRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        if (entry.isIntersecting) {
+          // Stagger reveal each item
+          for (let i = 0; i < itemCount; i++) {
+            setTimeout(() => {
+              setVisibleIndices(prev => new Set([...prev, i]));
+            }, i * 60);
+          }
+          if (triggerOnce) observer.unobserve(element);
+        } else if (!triggerOnce) {
+          setVisibleIndices(new Set());
+        }
+      },
+      { threshold, rootMargin }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [itemCount, threshold, rootMargin, triggerOnce]);
+
+  return { ref: elementRef, visibleIndices };
+}

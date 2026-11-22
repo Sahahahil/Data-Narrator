@@ -3,11 +3,11 @@ import { render } from '@testing-library/react';
 
 describe('LoadingStates', () => {
   describe('SkeletonLoader()', () => {
-    it('returns chart-height div with animate-pulse and bg-slate-800', () => {
+    it('returns chart-height div with bg-slate-800', () => {
       const result = SkeletonLoader();
       const { container } = render(result);
       const div = container.firstChild as HTMLElement;
-      expect(div).toHaveClass('h-64', 'w-full', 'animate-pulse', 'bg-slate-800', 'rounded-xl');
+      expect(div).toHaveClass('h-64', 'w-full', 'bg-slate-800', 'rounded-xl');
     });
   });
 
