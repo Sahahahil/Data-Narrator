@@ -1,5 +1,5 @@
 export const SkeletonLoader = (): JSX.Element => (
-  <div className="h-64 w-full animate-pulse bg-slate-800 rounded-xl" />
+  <div className="h-64 w-full bg-slate-800 rounded-xl" />
 );
 
 export const LoadingSpinner = (): JSX.Element => (
@@ -9,7 +9,7 @@ export const LoadingSpinner = (): JSX.Element => (
 );
 
 export const ErrorBoundary = ({ error, onRetry }: { error: Error; onRetry?: () => void }): JSX.Element => (
-  <div className="p-4 bg-red-900/30 border border-red-500 rounded-xl">
+  <div className="p-4 bg-red-900/50 rounded-xl">
     <h3 className="font-bold text-red-400 mb-2">Error</h3>
     <p className="text-slate-300 text-sm mb-4">{error.message}</p>
     {onRetry && (
