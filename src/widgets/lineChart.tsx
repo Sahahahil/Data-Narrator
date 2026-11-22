@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import {
   LineChart as RechartsLineChart,
   Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
-import { CHART_COLORS } from '../ui/chartColors';
+import { getChartColors } from '../ui/chartColors';
+import { useFilter, applyFilter } from '../ui/FilterContext';
 
 export interface LineChartProps {
   data: Record<string, unknown>[];
@@ -25,6 +26,7 @@ export const LineChart: React.FC<LineChartProps> = ({
   data, xAxisKey, yAxisKeys, groupKey, title, description
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { filter, isFiltered, clearFilter } = useFilter();
 
   // ResizeObserver for chart resizing
   useEffect(() => {
@@ -35,7 +37,16 @@ export const LineChart: React.FC<LineChartProps> = ({
     return () => ro.disconnect();
   }, []);
 
-  if (data.length === 0) {
+  // Apply cross-filter
+  const filteredData = useMemo(() => applyFilter(data, filter), [data, filter]);
+
+  // Theme-aware chart colors
+  const chartColors = useMemo(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    return getChartColors(isDark);
+  }, []);
+
+  if (filteredData.length === 0) {
     return (
       <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
         <h3 className="text-lg font-bold mb-1">{title}</h3>
@@ -49,7 +60,7 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   // If groupKey is provided, transform data for multi-line chart
   const chartData: (Record<string, unknown> | GroupedDataPoint)[] = groupKey
-    ? data.flatMap((row) =>
+    ? filteredData.flatMap((row) =>
         yAxisKeys.map((key) => ({
           [xAxisKey]: row[xAxisKey],
           [groupKey]: row[groupKey],
@@ -57,7 +68,7 @@ export const LineChart: React.FC<LineChartProps> = ({
           series: key,
         }))
       )
-    : data;
+    : filteredData;
 
   const seriesNames = groupKey
     ? [...new Set(chartData.map((d) => (d as GroupedDataPoint).series))]
@@ -65,7 +76,18 @@ export const LineChart: React.FC<LineChartProps> = ({
 
   return (
     <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
-      <h3 className="text-lg font-bold mb-1">{title}</h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-lg font-bold">{title}</h3>
+        {isFiltered && (
+          <button
+            onClick={clearFilter}
+            className="text-xs text-accent hover:underline"
+            aria-label="Clear cross-filter"
+          >
+            Clear filter
+          </button>
+        )}
+      </div>
       <p className="text-sm text-slate-400 mb-4">{description}</p>
       <div
         ref={containerRef}
@@ -75,7 +97,9 @@ export const LineChart: React.FC<LineChartProps> = ({
         tabIndex={0}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsLineChart data={chartData}>
+          <RechartsLineChart
+            data={chartData}
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis dataKey={xAxisKey} stroke="#94a3b8" fontSize={12} />
             <YAxis stroke="#94a3b8" fontSize={12} />
@@ -83,13 +107,13 @@ export const LineChart: React.FC<LineChartProps> = ({
               contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
               labelStyle={{ color: '#e2e8f0' }}
             />
-            <Legend />
+            <Legend onClick={() => { if (isFiltered) clearFilter(); }} />
             {seriesNames.map((seriesName, idx) => (
               <Line
                 key={seriesName}
                 type="monotone"
                 dataKey="value"
-                stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                stroke={chartColors[idx % chartColors.length]}
                 strokeWidth={2}
                 dot={false}
                 name={seriesName}

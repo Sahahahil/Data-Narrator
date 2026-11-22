@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import {
   BarChart as RechartsBarChart,
   Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Cell
 } from 'recharts';
-import { CHART_COLORS } from '../ui/chartColors';
+import { getChartColors } from '../ui/chartColors';
+import { useFilter, applyFilter } from '../ui/FilterContext';
 
 export interface BarChartProps {
   data: Record<string, unknown>[];
@@ -19,6 +20,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   data, xAxisKey, yAxisKeys, groupKey, title, description
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { filter, isFiltered, clearFilter } = useFilter();
 
   // ResizeObserver for chart resizing (Recharts ResponsiveContainer handles most cases)
   useEffect(() => {
@@ -29,7 +31,16 @@ export const BarChart: React.FC<BarChartProps> = ({
     return () => ro.disconnect();
   }, []);
 
-  if (data.length === 0) {
+  // Apply cross-filter
+  const filteredData = useMemo(() => applyFilter(data, filter), [data, filter]);
+
+  // Theme-aware chart colors
+  const chartColors = useMemo(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    return getChartColors(isDark);
+  }, []);
+
+  if (filteredData.length === 0) {
     return (
       <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
         <h3 className="text-lg font-bold mb-1">{title}</h3>
@@ -43,7 +54,7 @@ export const BarChart: React.FC<BarChartProps> = ({
 
   // If groupKey is provided, transform data for grouped bar chart
   const chartData = groupKey
-    ? data.flatMap((row) =>
+    ? filteredData.flatMap((row) =>
         yAxisKeys.map((key) => ({
           [xAxisKey]: row[xAxisKey],
           [groupKey]: row[groupKey],
@@ -51,13 +62,24 @@ export const BarChart: React.FC<BarChartProps> = ({
           series: key,
         }))
       )
-    : data;
+    : filteredData;
 
   const displayKeys = groupKey ? ['value'] : yAxisKeys;
 
   return (
     <div className="p-4 bg-slate-800 rounded-xl border border-slate-700">
-      <h3 className="text-lg font-bold mb-1">{title}</h3>
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-lg font-bold">{title}</h3>
+        {isFiltered && (
+          <button
+            onClick={clearFilter}
+            className="text-xs text-accent hover:underline"
+            aria-label="Clear cross-filter"
+          >
+            Clear filter
+          </button>
+        )}
+      </div>
       <p className="text-sm text-slate-400 mb-4">{description}</p>
       <div
         ref={containerRef}
@@ -67,7 +89,10 @@ export const BarChart: React.FC<BarChartProps> = ({
         tabIndex={0}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsBarChart data={chartData} layout="vertical">
+          <RechartsBarChart
+            data={chartData}
+            layout="vertical"
+          >
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis type="number" stroke="#94a3b8" fontSize={12} />
             <YAxis type="category" dataKey={xAxisKey} stroke="#94a3b8" fontSize={12} width={80} />
@@ -75,17 +100,17 @@ export const BarChart: React.FC<BarChartProps> = ({
               contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
               labelStyle={{ color: '#e2e8f0' }}
             />
-            <Legend />
+            <Legend onClick={() => { if (isFiltered) clearFilter(); }} />
             {displayKeys.map((key, idx) => (
               <Bar
                 key={key}
                 dataKey={key}
-                fill={groupKey ? undefined : CHART_COLORS[idx % CHART_COLORS.length]}
+                fill={groupKey ? undefined : chartColors[idx % chartColors.length]}
                 name={groupKey ? key : yAxisKeys[idx]}
                 radius={[0, 4, 4, 0]}
               >
                 {groupKey && chartData.map((d, i) => (
-                  <Cell key={i} fill={CHART_COLORS[chartData.findIndex(c => c['series'] === d['series'] && c[groupKey] === d[groupKey]) % CHART_COLORS.length]} />
+                  <Cell key={i} fill={chartColors[chartData.findIndex(c => c['series'] === d['series'] && c[groupKey] === d[groupKey]) % chartColors.length]} />
                 ))}
               </Bar>
             ))}
